@@ -1,0 +1,2017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ExamPixel Pro — Govt Exam Photo Converter</title>
+  <meta name="description" content="Convert your photo, signature and fingerprint for SSC, Railway, DSSSB, Odisha SSC and more — correct size, DPI, and file size in one click." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <!-- Razorpay SDK -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <style>
+    /* ===== RESET & BASE ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f5f6fa;
+      color: #1a1a2e;
+      line-height: 1.6;
+      scroll-behavior: smooth;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+    a { text-decoration: none; color: inherit; }
+
+    /* ===== SCROLLBAR ===== */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb { background: linear-gradient(135deg, #4f46e5, #7c3aed); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4f46e5; }
+
+    /* ===== NAVBAR ===== */
+    .navbar {
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid #e8eaf0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      transition: box-shadow 0.3s;
+    }
+    .navbar.scrolled { box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 70px;
+      flex-wrap: wrap;
+    }
+    .logo {
+      font-size: 24px;
+      font-weight: 800;
+      color: #1a1a2e;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .logo span { color: #4f46e5; }
+    .logo .pro-badge {
+      font-size: 10px;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: white;
+      padding: 2px 12px;
+      border-radius: 50px;
+      margin-left: 4px;
+      vertical-align: middle;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      animation: glowBadge 2s ease-in-out infinite;
+    }
+    @keyframes glowBadge {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.4); }
+      50% { box-shadow: 0 0 20px 4px rgba(245,158,11,0.2); }
+    }
+    .nav-links {
+      list-style: none;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .nav-links a {
+      font-size: 14px;
+      font-weight: 500;
+      color: #555;
+      transition: color 0.2s;
+      position: relative;
+    }
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: #4f46e5;
+      transition: width 0.3s;
+    }
+    .nav-links a:hover { color: #4f46e5; }
+    .nav-links a:hover::after { width: 100%; }
+
+    .lang-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #555;
+      cursor: pointer;
+      user-select: none;
+    }
+    .lang-toggle .toggle-track {
+      width: 40px;
+      height: 22px;
+      background: #ddd;
+      border-radius: 40px;
+      position: relative;
+      transition: background 0.25s;
+      flex-shrink: 0;
+    }
+    .lang-toggle .toggle-track .toggle-knob {
+      width: 16px;
+      height: 16px;
+      background: white;
+      border-radius: 50%;
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      transition: transform 0.25s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .lang-toggle.active .toggle-track { background: #4f46e5; }
+    .lang-toggle.active .toggle-track .toggle-knob { transform: translateX(18px); }
+    .lang-label { min-width: 26px; font-weight: 700; font-size: 11px; }
+
+    .premium-btn {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: white;
+      padding: 8px 20px;
+      border-radius: 50px;
+      font-size: 13px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 4px 16px rgba(245,158,11,0.3);
+    }
+    .premium-btn:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 8px 32px rgba(245,158,11,0.4);
+    }
+
+    /* ===== HERO ===== */
+    .hero {
+      position: relative;
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #6d28d9 100%);
+      color: white;
+      padding: 80px 0 90px;
+      text-align: center;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -20%;
+      width: 500px;
+      height: 500px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -30%;
+      left: -10%;
+      width: 400px;
+      height: 400px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .hero-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 6px 20px;
+      border-radius: 50px;
+      margin-bottom: 20px;
+      animation: fadeInDown 0.8s ease;
+    }
+    .hero h1 {
+      font-size: clamp(28px, 5vw, 52px);
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 16px;
+      letter-spacing: -1.5px;
+      animation: fadeInUp 0.8s ease;
+    }
+    .hero h1 span {
+      background: linear-gradient(90deg, #fbbf24, #f59e0b, #fbbf24);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: shimmer 3s ease-in-out infinite;
+    }
+    @keyframes shimmer {
+      0%, 100% { background-position: 0% center; }
+      50% { background-position: 200% center; }
+    }
+    .hero-sub {
+      font-size: 17px;
+      color: rgba(255,255,255,0.85);
+      max-width: 560px;
+      margin: 0 auto 32px;
+      animation: fadeInUp 0.8s ease 0.2s both;
+    }
+    .btn-primary {
+      display: inline-block;
+      background: #fbbf24;
+      color: #1a1a2e;
+      font-size: 16px;
+      font-weight: 700;
+      padding: 14px 40px;
+      border-radius: 50px;
+      transition: all 0.3s;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(251,191,36,0.3);
+      animation: fadeInUp 0.8s ease 0.4s both;
+    }
+    .btn-primary:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 8px 32px rgba(251,191,36,0.5);
+    }
+    .hero-bg-shape {
+      position: absolute;
+      bottom: -60px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120%;
+      height: 100px;
+      background: #f5f6fa;
+      border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    }
+
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== STATS ===== */
+    .stats { padding: 50px 0 40px; }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 16px;
+    }
+    .stat-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px 16px;
+      text-align: center;
+      border: 1px solid #e8eaf0;
+      transition: all 0.3s;
+      cursor: default;
+    }
+    .stat-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 12px 40px rgba(79,70,229,0.08);
+      border-color: #4f46e5;
+    }
+    .stat-num { font-size: 28px; font-weight: 800; color: #4f46e5; }
+    .stat-label { font-size: 12px; color: #777; margin-top: 4px; font-weight: 500; }
+
+    /* ===== SECTION COMMON ===== */
+    .section-tag {
+      display: inline-block;
+      background: #ede9fe;
+      color: #4f46e5;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 14px;
+      border-radius: 50px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+    .exams, .how, .faq { padding: 60px 0; }
+    .exams h2, .how h2, .faq h2 {
+      font-size: clamp(24px, 3vw, 36px);
+      font-weight: 800;
+      margin-bottom: 6px;
+      color: #1a1a2e;
+      letter-spacing: -0.5px;
+    }
+    .section-sub {
+      font-size: 15px;
+      color: #777;
+      margin-bottom: 32px;
+    }
+
+    /* Trending Banner */
+    .trending-banner {
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      border-radius: 14px;
+      padding: 14px 24px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+      border: 2px solid #f59e0b;
+      animation: pulseBorder 2s ease-in-out infinite;
+    }
+    @keyframes pulseBorder {
+      0%, 100% { border-color: #f59e0b; }
+      50% { border-color: #fbbf24; }
+    }
+    .trending-banner .fire { font-size: 26px; animation: pulse 1.5s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+    .trending-banner .text { font-weight: 700; color: #92400e; font-size: 14px; }
+    .trending-banner .exams-list { display: flex; gap: 8px; flex-wrap: wrap; }
+    .trending-banner .exam-tag {
+      background: white;
+      padding: 4px 14px;
+      border-radius: 50px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #4f46e5;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .trending-banner .exam-tag:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(79,70,229,0.2);
+      background: #4f46e5;
+      color: white;
+    }
+
+    /* ===== SEARCH ===== */
+    .search-box {
+      display: flex;
+      gap: 10px;
+      max-width: 440px;
+      margin: 0 auto 24px;
+      align-items: center;
+    }
+    .search-box input {
+      flex: 1;
+      padding: 12px 18px;
+      border: 2px solid #e8eaf0;
+      border-radius: 50px;
+      font-size: 14px;
+      transition: all 0.3s;
+      outline: none;
+      background: #fff;
+      font-weight: 500;
+    }
+    .search-box input:focus { border-color: #4f46e5; box-shadow: 0 0 0 4px rgba(79,70,229,0.08); }
+    .search-box .clear-btn {
+      padding: 12px 16px;
+      background: #f0f0f5;
+      color: #555;
+      border: none;
+      border-radius: 50px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: 600;
+    }
+    .search-box .clear-btn:hover { background: #ddd; }
+
+    /* ===== STATE FILTER ===== */
+    .state-filter {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+      justify-content: center;
+    }
+    .state-btn {
+      padding: 8px 18px;
+      border-radius: 50px;
+      border: 2px solid #e8eaf0;
+      background: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      color: #555;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .state-btn:hover { border-color: #4f46e5; color: #4f46e5; transform: translateY(-2px); }
+    .state-btn.active {
+      background: #4f46e5;
+      border-color: #4f46e5;
+      color: white;
+      box-shadow: 0 4px 16px rgba(79,70,229,0.25);
+    }
+
+    /* ===== EXAM CARDS ===== */
+    .exam-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+    }
+    .exam-card {
+      background: #fff;
+      border: 2px solid #e8eaf0;
+      border-radius: 16px;
+      padding: 18px 14px;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-align: center;
+      position: relative;
+    }
+    .exam-card:hover {
+      border-color: #4f46e5;
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(79,70,229,0.10);
+    }
+    .exam-card.active {
+      border-color: #4f46e5;
+      background: #faf9ff;
+      box-shadow: 0 0 0 4px rgba(79,70,229,0.08), 0 8px 32px rgba(79,70,229,0.06);
+    }
+    .exam-card.hidden { display: none; }
+    .exam-badge {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 3px 12px;
+      border-radius: 50px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .exam-badge.new { background: #10b981; color: white; animation: badgePulse 2s ease-in-out infinite; }
+    .exam-badge.trending { background: #f59e0b; color: white; animation: badgePulse 1.5s ease-in-out infinite; }
+    .exam-badge.popular { background: #4f46e5; color: white; }
+    @keyframes badgePulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+    .exam-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      margin: 0 auto 10px;
+      background: #f0f0f5;
+      transition: transform 0.3s;
+    }
+    .exam-card:hover .exam-icon { transform: scale(1.05); }
+    .exam-icon.ssc { background: #ede9fe; }
+    .exam-icon.railway { background: #e0f2fe; }
+    .exam-icon.upsc { background: #d1fae5; }
+    .exam-icon.ibps { background: #f3e8ff; }
+    .exam-icon.odisha { background: #fce4ec; }
+    .exam-icon.up { background: #fef3c7; }
+    .exam-icon.bihar { background: #fef9c3; }
+    .exam-icon.mp { background: #cffafe; }
+    .exam-icon.raj { background: #fce7f3; }
+    .exam-icon.custom { background: #f3f4f6; }
+    .exam-name { font-size: 13px; font-weight: 700; color: #1a1a2e; margin-bottom: 2px; }
+    .exam-detail { font-size: 10px; color: #888; margin-bottom: 2px; }
+    .exam-size {
+      font-size: 9px;
+      color: #4f46e5;
+      font-weight: 700;
+      background: #ede9fe;
+      padding: 2px 10px;
+      border-radius: 50px;
+      display: inline-block;
+      margin-top: 2px;
+    }
+
+    /* ===== UPLOAD SECTION ===== */
+    .upload-section { padding: 0 0 60px; }
+    .upload-box {
+      background: #fff;
+      border-radius: 24px;
+      border: 1px solid #e8eaf0;
+      padding: 28px;
+      max-width: 780px;
+      margin: 0 auto;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.02);
+    }
+    .selected-exam-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .selected-label { font-size: 12px; color: #888; font-weight: 500; }
+    .selected-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #4f46e5;
+      background: #ede9fe;
+      padding: 4px 14px;
+      border-radius: 50px;
+    }
+    .change-btn {
+      font-size: 11px;
+      color: #888;
+      background: none;
+      border: 1.5px solid #ddd;
+      padding: 4px 12px;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: 600;
+    }
+    .change-btn:hover { border-color: #4f46e5; color: #4f46e5; }
+
+    .specs-bar {
+      display: flex;
+      gap: 12px;
+      background: #f8f9ff;
+      border-radius: 12px;
+      padding: 12px 18px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      border: 1px solid #eef0ff;
+    }
+    .spec-item { display: flex; flex-direction: column; gap: 1px; }
+    .spec-label { font-size: 9px; color: #aaa; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; }
+    .spec-val { font-size: 14px; font-weight: 700; color: #1a1a2e; }
+
+    /* ===== EDITOR CONTROLS ===== */
+    .editor-controls {
+      background: #f8f9ff;
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 16px;
+      border: 1px solid #eef0ff;
+    }
+    .editor-controls .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 12px;
+    }
+    .editor-controls .row:last-child { margin-bottom: 0; }
+    .editor-controls .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .editor-controls label {
+      font-size: 10px;
+      font-weight: 700;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .editor-controls select,
+    .editor-controls input[type="range"],
+    .editor-controls input[type="color"] {
+      padding: 6px 12px;
+      border: 1.5px solid #e8eaf0;
+      border-radius: 10px;
+      font-size: 12px;
+      background: #fff;
+      transition: all 0.3s;
+      width: 100%;
+      font-weight: 500;
+    }
+    .editor-controls select:focus,
+    .editor-controls input:focus {
+      outline: none;
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 3px rgba(79,70,229,0.08);
+    }
+    .editor-controls input[type="range"] {
+      padding: 4px 0;
+      accent-color: #4f46e5;
+      cursor: pointer;
+    }
+    .editor-controls .range-value {
+      font-size: 13px;
+      font-weight: 700;
+      color: #4f46e5;
+      text-align: center;
+      margin-top: 2px;
+    }
+    .editor-controls .ai-enhance {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      border-radius: 12px;
+      border: 2px solid #f59e0b;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .editor-controls .ai-enhance:hover { transform: scale(1.01); box-shadow: 0 4px 20px rgba(245,158,11,0.15); }
+    .editor-controls .ai-enhance .lock { font-size: 18px; }
+    .editor-controls .ai-enhance .label { font-size: 13px; font-weight: 700; color: #92400e; flex: 1; }
+    .editor-controls .ai-enhance .badge-pro {
+      background: #f59e0b;
+      color: white;
+      padding: 2px 14px;
+      border-radius: 50px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .editor-controls .ai-enhance.active {
+      background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+      border-color: #10b981;
+    }
+    .editor-controls .ai-enhance.active .badge-pro {
+      background: #10b981;
+    }
+
+    .upload-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .tab {
+      padding: 6px 16px;
+      border-radius: 50px;
+      border: 1.5px solid #e8eaf0;
+      background: none;
+      font-size: 12px;
+      font-weight: 600;
+      color: #888;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .tab:hover { border-color: #4f46e5; color: #4f46e5; }
+    .tab.active {
+      background: #4f46e5;
+      border-color: #4f46e5;
+      color: white;
+      box-shadow: 0 4px 16px rgba(79,70,229,0.25);
+    }
+
+    .drop-zone {
+      border: 2px dashed #c7c5f0;
+      border-radius: 16px;
+      padding: 40px 20px;
+      text-align: center;
+      background: #fafaff;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+    .drop-zone.drag-over {
+      border-color: #4f46e5;
+      background: #f0effe;
+      transform: scale(1.01);
+    }
+    .drop-icon { font-size: 36px; color: #c7c5f0; margin-bottom: 10px; }
+    .drop-text { font-size: 15px; font-weight: 700; color: #555; margin-bottom: 4px; }
+    .drop-sub { font-size: 12px; color: #aaa; margin-bottom: 12px; }
+    .btn-upload {
+      display: inline-block;
+      background: #4f46e5;
+      color: white;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 10px 28px;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 4px 16px rgba(79,70,229,0.2);
+    }
+    .btn-upload:hover { background: #4338ca; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(79,70,229,0.3); }
+    .drop-formats { font-size: 11px; color: #bbb; margin-top: 12px; }
+
+    .preview-area {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    .preview-box {
+      flex: 1;
+      min-width: 150px;
+      text-align: center;
+    }
+    .preview-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 8px;
+    }
+    .preview-box img {
+      max-width: 100%;
+      max-height: 170px;
+      border-radius: 12px;
+      border: 1px solid #e8eaf0;
+      object-fit: contain;
+      transition: all 0.3s;
+    }
+    .preview-box img:hover { transform: scale(1.02); }
+    .img-info { font-size: 10px; color: #aaa; margin-top: 6px; font-weight: 500; }
+    .converted-tag { color: #10b981; font-weight: 700; }
+    .preview-arrow { font-size: 24px; color: #c7c5f0; }
+
+    .btn-download {
+      display: block;
+      width: 100%;
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      color: white;
+      font-size: 15px;
+      font-weight: 700;
+      padding: 14px;
+      border-radius: 50px;
+      border: none;
+      cursor: pointer;
+      margin-top: 18px;
+      transition: all 0.3s;
+      box-shadow: 0 4px 24px rgba(79,70,229,0.25);
+    }
+    .btn-download:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 40px rgba(79,70,229,0.35);
+    }
+    .note-box {
+      font-size: 11px;
+      color: #888;
+      background: #f8f9ff;
+      border-radius: 10px;
+      padding: 10px 16px;
+      margin-top: 14px;
+      border: 1px solid #eef0ff;
+    }
+
+    /* ===== CUSTOM EDITOR ===== */
+    .custom-editor {
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px;
+      border: 2px solid #e8eaf0;
+      margin-top: 18px;
+      display: none;
+    }
+    .custom-editor.show { display: block; animation: fadeInUp 0.4s ease; }
+    .custom-editor h4 { font-size: 15px; margin-bottom: 14px; color: #1a1a2e; font-weight: 700; }
+    .custom-editor .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .custom-editor .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .custom-editor label { font-size: 11px; font-weight: 600; color: #555; }
+    .custom-editor input {
+      padding: 8px 14px;
+      border: 1.5px solid #e8eaf0;
+      border-radius: 10px;
+      font-size: 13px;
+      transition: all 0.3s;
+      width: 100%;
+      font-weight: 500;
+    }
+    .custom-editor input:focus {
+      outline: none;
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 3px rgba(79,70,229,0.08);
+    }
+    .custom-editor .btn-apply {
+      background: #4f46e5;
+      color: white;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 10px 24px;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s;
+      width: 100%;
+      box-shadow: 0 4px 16px rgba(79,70,229,0.2);
+    }
+    .custom-editor .btn-apply:hover { background: #4338ca; transform: translateY(-2px); }
+
+    /* ===== PREMIUM MODAL ===== */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(8px);
+      z-index: 999;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+      background: #fff;
+      border-radius: 28px;
+      padding: 44px 36px;
+      max-width: 500px;
+      width: 92%;
+      text-align: center;
+      position: relative;
+      animation: modalIn 0.4s ease;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.2);
+    }
+    @keyframes modalIn {
+      from { transform: scale(0.9) translateY(20px); opacity: 0; }
+      to { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    .modal-box .close {
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      font-size: 28px;
+      color: #aaa;
+      cursor: pointer;
+      background: none;
+      border: none;
+      transition: color 0.3s;
+    }
+    .modal-box .close:hover { color: #555; }
+    .modal-box .icon { font-size: 52px; margin-bottom: 12px; display: block; }
+    .modal-box h2 { font-size: 24px; font-weight: 800; margin-bottom: 6px; color: #1a1a2e; }
+    .modal-box .subtitle { font-size: 14px; color: #666; margin-bottom: 20px; }
+    .modal-box .pricing {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .modal-box .pricing .plan {
+      padding: 18px 20px;
+      border: 2px solid #e8eaf0;
+      border-radius: 14px;
+      flex: 1;
+      min-width: 120px;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-align: center;
+    }
+    .modal-box .pricing .plan:hover { border-color: #4f46e5; transform: translateY(-2px); }
+    .modal-box .pricing .plan.active {
+      border-color: #4f46e5;
+      background: #faf9ff;
+      box-shadow: 0 4px 20px rgba(79,70,229,0.08);
+    }
+    .modal-box .pricing .plan .name { font-weight: 700; font-size: 14px; color: #1a1a2e; }
+    .modal-box .pricing .plan .price { font-size: 22px; font-weight: 800; color: #4f46e5; }
+    .modal-box .pricing .plan .price span { font-size: 13px; font-weight: 400; color: #888; }
+    .modal-box .pricing .plan .features { font-size: 11px; color: #888; margin-top: 4px; }
+    .modal-box .pricing .plan .save { font-size: 10px; color: #10b981; font-weight: 700; }
+    .modal-box .btn-subscribe {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: white;
+      font-size: 16px;
+      font-weight: 700;
+      padding: 14px 40px;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s;
+      width: 100%;
+      box-shadow: 0 4px 24px rgba(245,158,11,0.3);
+    }
+    .modal-box .btn-subscribe:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 40px rgba(245,158,11,0.4);
+    }
+    .modal-box .btn-subscribe:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .modal-box .secure {
+      font-size: 11px;
+      color: #aaa;
+      margin-top: 12px;
+    }
+    .modal-box .secure span { color: #10b981; }
+
+    /* ===== HOW IT WORKS ===== */
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 18px;
+      margin-top: 32px;
+    }
+    .step-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px 20px;
+      border: 1px solid #e8eaf0;
+      text-align: center;
+      transition: all 0.3s;
+    }
+    .step-card:hover { transform: translateY(-6px); box-shadow: 0 12px 40px rgba(0,0,0,0.04); }
+    .step-num {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      color: white;
+      font-size: 20px;
+      font-weight: 800;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 14px;
+      box-shadow: 0 4px 16px rgba(79,70,229,0.2);
+    }
+    .step-title { font-size: 15px; font-weight: 700; color: #1a1a2e; margin-bottom: 4px; }
+    .step-desc { font-size: 13px; color: #777; line-height: 1.6; }
+
+    /* ===== FAQ ===== */
+    .faq { background: #fff; }
+    .faq-list { margin-top: 28px; max-width: 680px; }
+    .faq-item {
+      border-bottom: 1px solid #f0f0f5;
+      padding: 16px 0;
+    }
+    .faq-q {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1a1a2e;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+      transition: color 0.3s;
+    }
+    .faq-q:hover { color: #4f46e5; }
+    .faq-arrow { color: #aaa; font-size: 12px; transition: transform 0.3s; }
+    .faq-q.open .faq-arrow { transform: rotate(180deg); }
+    .faq-a {
+      font-size: 13px;
+      color: #666;
+      margin-top: 8px;
+      line-height: 1.7;
+      display: none;
+      padding-right: 20px;
+    }
+
+    /* ===== FOOTER ===== */
+    .footer {
+      background: #1a1a2e;
+      color: white;
+      padding: 40px 0;
+      text-align: center;
+    }
+    .footer .logo { color: white; margin-bottom: 8px; font-size: 18px; justify-content: center; }
+    .footer .logo span { color: #a5b4fc; }
+    .footer-text { font-size: 13px; color: #a0a8c0; margin-bottom: 6px; }
+    .footer-copy { font-size: 11px; color: #555; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 600px) {
+      .nav-links { gap: 10px; }
+      .search-box { max-width: 100%; }
+      .search-box input { font-size: 12px; padding: 10px 14px; }
+      .hero { padding: 50px 0 60px; }
+      .upload-box { padding: 16px; }
+      .preview-area { flex-direction: column; }
+      .preview-arrow { transform: rotate(90deg); }
+      .custom-editor .row { grid-template-columns: 1fr; }
+      .trending-banner { padding: 10px 14px; }
+      .trending-banner .text { font-size: 12px; }
+      .editor-controls .row { grid-template-columns: 1fr 1fr; }
+      .modal-box { padding: 28px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PREMIUM MODAL -->
+  <div class="modal-overlay" id="premiumModal">
+    <div class="modal-box">
+      <button class="close" onclick="closePremiumModal()">✕</button>
+      <span class="icon">✨</span>
+      <h2>Unlock AI Enhance</h2>
+      <p class="subtitle">Get HD quality, AI enhancement, and more premium features.</p>
+      <div class="pricing">
+        <div class="plan active" onclick="selectPlan(this, 'monthly')">
+          <div class="name">Monthly</div>
+          <div class="price">₹99 <span>/mo</span></div>
+          <div class="features">AI Enhance • HD Output</div>
+        </div>
+        <div class="plan" onclick="selectPlan(this, 'yearly')">
+          <div class="name">Yearly</div>
+          <div class="price">₹499 <span>/yr</span></div>
+          <div class="features">Save ₹689 • All Features</div>
+          <div class="save">🔥 Best Value</div>
+        </div>
+      </div>
+      <button class="btn-subscribe" id="subscribeBtn" onclick="initiatePayment()">🚀 Subscribe Now</button>
+      <div class="secure">🔒 Secure payment via <span>Razorpay</span> • 7-day free trial</div>
+    </div>
+  </div>
+
+  <!-- NAVBAR -->
+  <nav class="navbar" id="navbar">
+    <div class="container nav-inner">
+      <div class="logo">Exam<span>Pixel</span><span class="pro-badge">PRO</span></div>
+      <ul class="nav-links">
+        <li><a href="#exams" data-i18n="nav-exams">Exams</a></li>
+        <li><a href="#how" data-i18n="nav-how">How it works</a></li>
+        <li><a href="#faq" data-i18n="nav-faq">FAQ</a></li>
+        <li>
+          <div class="lang-toggle" id="langToggle" onclick="toggleLanguage()">
+            <span class="lang-label" id="langLabel">EN</span>
+            <div class="toggle-track">
+              <div class="toggle-knob"></div>
+            </div>
+            <span class="lang-label" id="langLabel2">HI</span>
+          </div>
+        </li>
+        <li><button class="premium-btn" onclick="openPremiumModal()">⭐ Premium</button></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-badge" data-i18n="hero-badge">🔥 AI Enhance Available</div>
+      <h1 data-i18n="hero-title">Sarkari Exam Form Varne ke liye<br /><span>Perfect Photo</span> — 1 Click</h1>
+      <p class="hero-sub" data-i18n="hero-sub">SSC, Railway, UPSC, Odisha SSC — sahi size, DPI aur file size automatic</p>
+      <a href="#exams" class="btn-primary" data-i18n="hero-btn">🚀 Apna Exam Chuno</a>
+    </div>
+    <div class="hero-bg-shape"></div>
+  </section>
+
+  <!-- STATS -->
+  <section class="stats">
+    <div class="container stats-grid">
+      <div class="stat-card"><div class="stat-num">30+</div><div class="stat-label" data-i18n="stat-exams">Exams</div></div>
+      <div class="stat-card"><div class="stat-num">4K</div><div class="stat-label" data-i18n="stat-click">HD Output</div></div>
+      <div class="stat-card"><div class="stat-num">AI</div><div class="stat-label" data-i18n="stat-free">Enhance</div></div>
+      <div class="stat-card"><div class="stat-num">⚡</div><div class="stat-label" data-i18n="stat-instant">Instant</div></div>
+    </div>
+  </section>
+
+  <!-- EXAM SELECTOR -->
+  <section class="exams" id="exams">
+    <div class="container">
+      <div class="section-tag" data-i18n="exam-tag">Choose Your Exam</div>
+      <h2 data-i18n="exam-heading">Kaunsa exam ka form bhar rahe ho?</h2>
+      <p class="section-sub" data-i18n="exam-sub">Exam select karo — sari settings automatic</p>
+
+      <!-- TRENDING BANNER -->
+      <div class="trending-banner">
+        <span class="fire">🔥</span>
+        <span class="text" data-i18n="trending-text">Trending Exams:</span>
+        <div class="exams-list">
+          <span class="exam-tag" onclick="scrollToExam('SSC CGL CHSL')">SSC CGL</span>
+          <span class="exam-tag" onclick="scrollToExam('Railway NTPC Group D')">Railway NTPC</span>
+          <span class="exam-tag" onclick="scrollToExam('OSSC CGL')">OSSC CGL</span>
+          <span class="exam-tag" onclick="scrollToExam('UP Police Constable')">UP Police</span>
+        </div>
+      </div>
+
+      <!-- SEARCH -->
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="🔍 Search exam..." oninput="searchExams()">
+        <button class="clear-btn" onclick="clearSearch()">✕</button>
+      </div>
+
+      <!-- STATE FILTER -->
+      <div class="state-filter">
+        <button class="state-btn active" data-state="all" onclick="filterState('all')">🌍 All</button>
+        <button class="state-btn" data-state="odisha" onclick="filterState('odisha')">🧡 Odisha</button>
+        <button class="state-btn" data-state="up" onclick="filterState('up')">💛 UP</button>
+        <button class="state-btn" data-state="bihar" onclick="filterState('bihar')">❤️ Bihar</button>
+        <button class="state-btn" data-state="mp" onclick="filterState('mp')">💚 MP</button>
+        <button class="state-btn" data-state="raj" onclick="filterState('raj')">💗 Rajasthan</button>
+        <button class="state-btn" data-state="allindia" onclick="filterState('allindia')">🇮🇳 All India</button>
+        <button class="state-btn" data-state="custom" onclick="filterState('custom')">⚙️ Custom</button>
+      </div>
+
+      <div class="exam-grid" id="examGrid">
+        <!-- ALL INDIA -->
+        <div class="exam-card trending" data-state="allindia" data-name="SSC CGL CHSL" data-trending="10" onclick="selectExam(this, 'SSC CGL / CHSL', '100x120', '200', '20KB', '50KB')">
+          <span class="exam-badge trending">🔥 Trending</span>
+          <div class="exam-icon ssc">🏛️</div>
+          <div class="exam-name">SSC CGL / CHSL</div>
+          <div class="exam-detail">100×120 px • 200 DPI</div>
+          <div class="exam-size">Max 50KB</div>
+        </div>
+        <div class="exam-card trending" data-state="allindia" data-name="Railway NTPC Group D" data-trending="9" onclick="selectExam(this, 'Railway NTPC / Group D', '3.5x4.5cm', '200', '20KB', '100KB')">
+          <span class="exam-badge trending">🔥 Trending</span>
+          <div class="exam-icon railway">🚂</div>
+          <div class="exam-name">Railway NTPC / GD</div>
+          <div class="exam-detail">3.5×4.5 cm • 200 DPI</div>
+          <div class="exam-size">Max 100KB</div>
+        </div>
+        <div class="exam-card" data-state="allindia" data-name="SSC MTS GD" data-trending="5" onclick="selectExam(this, 'SSC MTS / GD', '100x100', '200', '10KB', '30KB')">
+          <span class="exam-badge popular">⭐ Popular</span>
+          <div class="exam-icon ssc">🛡️</div>
+          <div class="exam-name">SSC MTS / GD</div>
+          <div class="exam-detail">100×100 px • 200 DPI</div>
+          <div class="exam-size">Max 30KB</div>
+        </div>
+        <div class="exam-card new" data-state="allindia" data-name="UPSC CSE" data-trending="7" onclick="selectExam(this, 'UPSC CSE', '300x400', '200', '20KB', '300KB')">
+          <span class="exam-badge new">🆕 New</span>
+          <div class="exam-icon upsc">🇮🇳</div>
+          <div class="exam-name">UPSC CSE</div>
+          <div class="exam-detail">300×400 px • 200 DPI</div>
+          <div class="exam-size">Max 300KB</div>
+        </div>
+        <div class="exam-card" data-state="allindia" data-name="IBPS PO Clerk" data-trending="6" onclick="selectExam(this, 'IBPS PO / Clerk', '200x200', '200', '20KB', '50KB')">
+          <span class="exam-badge popular">⭐ Popular</span>
+          <div class="exam-icon ibps">🏦</div>
+          <div class="exam-name">IBPS PO / Clerk</div>
+          <div class="exam-detail">200×200 px • 200 DPI</div>
+          <div class="exam-size">Max 50KB</div>
+        </div>
+        <div class="exam-card" data-state="allindia" data-name="DSSSB" data-trending="5" onclick="selectExam(this, 'DSSSB', '200x230', '200', '10KB', '50KB')">
+          <div class="exam-icon ssc">📚</div>
+          <div class="exam-name">DSSSB</div>
+          <div class="exam-detail">200×230 px • 200 DPI</div>
+          <div class="exam-size">Max 50KB</div>
+        </div>
+        <div class="exam-card new" data-state="allindia" data-name="CTET UPTET" data-trending="6" onclick="selectExam(this, 'CTET / UPTET', '200x250', '200', '10KB', '50KB')">
+          <span class="exam-badge new">🆕 New</span>
+          <div class="exam-icon ssc">👨‍🏫</div>
+          <div class="exam-name">CTET / UPTET</div>
+          <div class="exam-detail">200×250 px • 200 DPI</div>
+          <div class="exam-size">Max 50KB</div>
+        </div>
+
+        <!-- ODISHA -->
+        <div class="exam-card trending" data-state="odisha" data-name="OSSC CGL" data-trending="8" onclick="selectExam(this, 'OSSC CGL', '150x200', '200', '10KB', '50KB')">
+          <span class="exam-badge trending">🔥 Trending</span>
+          <div class="exam-icon odisha">🧡</div>
+          <div class="exam-name">OSSC CGL</div>
+          <div class="exam-detail">150×200 px • 200 DPI</div>
+          <div class="exam-size">Max 50KB</div>
+        </div>
+        <div class="exam-card trending" data-state="odisha" data-name="OSSSC RI ARI Amin" data-trending="7" onclick="selectExam(this, 'OSSSC RI / ARI / Amin', '150x200', '200', '10KB', '50KB')">
+          <span class="exam-badge trending">🔥 Trending</span>
+          <div class="exam-icon odisha">📋</div>
+          <div class="exam-name">OSSSC RI / ARI / Amin</div>
+          <div class="exam-detail">150×200 px • 200 DPI</div>
+          <div class="exam-size">Max 50KB</div>
+        </div>
+        <div class="exam-card new" data-state="odisha" data-name="OPSC OAS" data-trending="6" onclick="selectExam(this, 'OPSC OAS', '300x400', '200', '20KB', '200KB')">
+          <span class="exam-badge new">🆕 New</span>
+          <div class="exam-icon odisha">🏛️</div>
+          <div class="exam-name">OPSC OAS</div>
+          <div class="exam-detail">300×400 px • 200 DPI</div>
+          <div class="exam-size">Max 200KB</div>
+        </div>
+        <div class="exam-card" data-state="odisha" data-name="OSSSC PEO Panchayat" data-trending="4" onclick="selectExam(this, 'OSSSC PEO / Panchayat', '150x200', '200', '10KB', '50KB')">
+          <div class="exam-icon odisha">🏘️</div>
+          <div class="exam-name">OSSSC PEO / Panchayat</div>
+          <div class="exam-detail">150×200 px • 200 DPI</div>
+          <div class="exam-size">Max 50KB</div>
+        </div>
+
+        <!-- UP -->
+        <div class="exam-card trending" data-state="up" data-name="UP Police Constable" data-trending="8" onclick="selectExam(this, 'UP Police Constable', '150x200', '200', '10KB', '50KB')">
+          <span class="exam-badge trending">🔥 Trending</span>
+          <div class="exam-icon up">👮</div>
+          <div class="exam-name">UP Police Constable</div>
+          <div class="exam-detail">150×200 px • 200 DPI</div>
+          <div class="exam-size">Max 50KB</div>
+        </div>
+
+        <!-- BIHAR -->
+        <div class="exam-card" data-state="bihar" data-name="BPSC" data-trending="5" onclick="selectExam(this, 'BPSC', '150x200', '200', '10KB', '50KB')">
+          <div class="exam-icon bihar">📯</div>
+          <div class="exam-name">BPSC</div>
+          <div class="exam-detail">150×200 px • 200 DPI</div>
+          <div class="exam-size">Max 50KB</div>
+        </div>
+
+        <!-- MP -->
+        <div class="exam-card" data-state="mp" data-name="MP Police Constable" data-trending="4" onclick="selectExam(this, 'MP Police Constable', '150x200', '200', '10KB', '50KB')">
+          <div class="exam-icon mp">🛂</div>
+          <div class="exam-name">MP Police Constable</div>
+          <div class="exam-detail">150×200 px • 200 DPI</div>
+          <div class="exam-size">Max 50KB</div>
+        </div>
+
+        <!-- RAJASTHAN -->
+        <div class="exam-card" data-state="raj" data-name="Rajasthan Police" data-trending="4" onclick="selectExam(this, 'Rajasthan Police', '150x200', '200', '10KB', '50KB')">
+          <div class="exam-icon raj">🛡️</div>
+          <div class="exam-name">Rajasthan Police</div>
+          <div class="exam-detail">150×200 px • 200 DPI</div>
+          <div class="exam-size">Max 50KB</div>
+        </div>
+
+        <!-- CUSTOM -->
+        <div class="exam-card" data-state="custom" data-name="Custom Size" data-trending="0" onclick="selectExam(this, 'Custom', '200x250', '200', '10KB', '100KB')">
+          <div class="exam-icon custom">⚙️</div>
+          <div class="exam-name">Custom Size</div>
+          <div class="exam-detail">Set your own size</div>
+          <div class="exam-size">Adjustable</div>
+        </div>
+      </div>
+
+      <!-- CUSTOM EDITOR -->
+      <div class="custom-editor" id="customEditor">
+        <h4>✏️ Edit Custom Size</h4>
+        <div class="row">
+          <div class="form-group">
+            <label>Width (px)</label>
+            <input type="number" id="customWidth" value="200" min="50" max="1000">
+          </div>
+          <div class="form-group">
+            <label>Height (px)</label>
+            <input type="number" id="customHeight" value="250" min="50" max="1000">
+          </div>
+        </div>
+        <div class="row">
+          <div class="form-group">
+            <label>DPI</label>
+            <input type="number" id="customDpi" value="200" min="72" max="600">
+          </div>
+          <div class="form-group">
+            <label>Max Size (KB)</label>
+            <input type="number" id="customMaxSize" value="100" min="10" max="500">
+          </div>
+        </div>
+        <button class="btn-apply" onclick="applyCustomSize()">✅ Apply Custom Size</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- UPLOAD SECTION -->
+  <section class="upload-section" id="upload-section" style="display:none;">
+    <div class="container">
+      <div class="upload-box">
+        <div class="selected-exam-info">
+          <span class="selected-label" data-i18n="selected-exam">Selected:</span>
+          <span class="selected-name" id="selected-exam-name">SSC CGL</span>
+          <button class="change-btn" onclick="changeExam()" data-i18n="change-btn">Change</button>
+        </div>
+        <div class="specs-bar">
+          <div class="spec-item"><span class="spec-label" data-i18n="spec-size">Size</span><span class="spec-val" id="spec-size">—</span></div>
+          <div class="spec-item"><span class="spec-label" data-i18n="spec-dpi">DPI</span><span class="spec-val" id="spec-dpi">—</span></div>
+          <div class="spec-item"><span class="spec-label" data-i18n="spec-min">Min</span><span class="spec-val" id="spec-min">—</span></div>
+          <div class="spec-item"><span class="spec-label" data-i18n="spec-max">Max</span><span class="spec-val" id="spec-max">—</span></div>
+        </div>
+
+        <!-- EDITOR CONTROLS -->
+        <div class="editor-controls">
+          <div class="row">
+            <div class="form-group">
+              <label>Format</label>
+              <select id="outputFormat" onchange="updatePreview()">
+                <option value="image/jpeg">JPG</option>
+                <option value="image/png">PNG</option>
+                <option value="image/webp">WEBP</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Quality</label>
+              <input type="range" id="qualitySlider" min="10" max="100" value="90" oninput="updateQualityValue()">
+              <div class="range-value" id="qualityValue">90%</div>
+            </div>
+            <div class="form-group">
+              <label>Background</label>
+              <select id="bgColor" onchange="updatePreview()">
+                <option value="#ffffff">White</option>
+                <option value="transparent">Transparent</option>
+                <option value="#f0f0f0">Light Gray</option>
+                <option value="#000000">Black</option>
+                <option value="#4f46e5">Exam Blue</option>
+                <option value="custom">Custom Color</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="form-group" style="display: none;" id="customColorGroup">
+              <label>Custom Color</label>
+              <input type="color" id="customColor" value="#4f46e5" onchange="updatePreview()">
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+              <div class="ai-enhance" id="aiEnhanceBtn" onclick="openPremiumModal()">
+                <span class="lock">🔒</span>
+                <span class="label">🤖 AI Enhance — Sharpen &amp; Upscale</span>
+                <span class="badge-pro">PRO</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="upload-tabs">
+          <button class="tab active" onclick="switchTab(this, 'photo')" data-i18n="tab-photo">📸 Photo</button>
+          <button class="tab" onclick="switchTab(this, 'signature')" data-i18n="tab-signature">✍️ Signature</button>
+          <button class="tab" onclick="switchTab(this, 'fingerprint')" data-i18n="tab-fingerprint">🖐️ Fingerprint</button>
+        </div>
+        <div class="drop-zone" id="drop-zone">
+          <div class="drop-icon">📤</div>
+          <div class="drop-text" data-i18n="drop-text">Drag &amp; Drop your photo here</div>
+          <div class="drop-sub" data-i18n="drop-or">or</div>
+          <label class="btn-upload" for="file-input" data-i18n="browse-btn">Browse File</label>
+          <input type="file" id="file-input" accept="image/*" onchange="handleFile(event)" hidden />
+          <div class="drop-formats" data-i18n="drop-formats">JPG, PNG, JPEG supported</div>
+        </div>
+        <div class="preview-area" id="preview-area" style="display:none;">
+          <div class="preview-box">
+            <div class="preview-label" data-i18n="original-label">Original</div>
+            <img id="original-img" src="" alt="Original" />
+            <div class="img-info" id="original-info"></div>
+          </div>
+          <div class="preview-arrow">➡️</div>
+          <div class="preview-box">
+            <div class="preview-label" data-i18n="converted-label">Converted</div>
+            <img id="converted-img" src="" alt="Converted" />
+            <div class="img-info converted-tag" data-i18n="ready-tag">✅ Ready</div>
+          </div>
+        </div>
+        <button class="btn-download" id="download-btn" style="display:none;" onclick="downloadImage()" data-i18n="download-btn">⬇️ Download Converted Photo</button>
+        <div class="note-box">
+          <strong data-i18n="note-strong">Note:</strong> <span data-i18n="note-text">Processed locally in your browser. We never store your images.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="how" id="how">
+    <div class="container">
+      <div class="section-tag" data-i18n="how-tag">Simple Process</div>
+      <h2 data-i18n="how-heading">Kaise kaam karta hai?</h2>
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-num">1</div>
+          <div class="step-title" data-i18n="step1-title">Exam chuno</div>
+          <div class="step-desc" data-i18n="step1-desc">SSC, Railway, UPSC — jo bhi exam ho select karo</div>
+        </div>
+        <div class="step-card">
+          <div class="step-num">2</div>
+          <div class="step-title" data-i18n="step2-title">Photo upload karo</div>
+          <div class="step-desc" data-i18n="step2-desc">Photo, signature ya fingerprint — koi bhi size chalega</div>
+        </div>
+        <div class="step-card">
+          <div class="step-num">3</div>
+          <div class="step-title" data-i18n="step3-title">Download karo</div>
+          <div class="step-desc" data-i18n="step3-desc">Exact size, DPI aur file size — Ek click mein download</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="faq" id="faq">
+    <div class="container">
+      <div class="section-tag" data-i18n="faq-tag">FAQ</div>
+      <h2 data-i18n="faq-heading">Common Questions</h2>
+      <div class="faq-list">
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)" data-i18n="faq-q1">Kya yeh free hai? <span class="faq-arrow">▼</span></div>
+          <div class="faq-a" data-i18n="faq-a1">Haan, basic features bilkul free hain. AI Enhance premium feature hai.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)" data-i18n="faq-q2">Meri photo safe hai? <span class="faq-arrow">▼</span></div>
+          <div class="faq-a" data-i18n="faq-a2">Bilkul. Photo sirf browser mein process hoti hai. Server pe kuch upload nahi hota.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)" data-i18n="faq-q3">AI Enhance kya karta hai? <span class="faq-arrow">▼</span></div>
+          <div class="faq-a" data-i18n="faq-a3">AI Enhance photo ko sharpen karta hai, upscale karta hai aur quality improve karta hai.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)" data-i18n="faq-q4">Payment kaise work karta hai? <span class="faq-arrow">▼</span></div>
+          <div class="faq-a" data-i18n="faq-a4">Razorpay ke through secure payment. Card, UPI, Net Banking sab support hai.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="logo">Exam<span>Pixel</span><span class="pro-badge" style="font-size:10px;">PRO</span></div>
+      <div class="footer-text" data-i18n="footer-text">Made with ❤️ for Indian Exam Aspirants</div>
+      <div class="footer-copy">&copy; 2025 ExamPixel Pro. All rights reserved.</div>
+    </div>
+  </footer>
+
+  <script>
+    // ===== LANGUAGE TOGGLE =====
+    let lang = 'hi';
+    const translations = {
+      en: {
+        'nav-exams': 'Exams', 'nav-how': 'How it works', 'nav-faq': 'FAQ',
+        'hero-badge': '🔥 AI Enhance Available',
+        'hero-title': 'Perfect Photo for Govt Exams — <span>1 Click</span>',
+        'hero-sub': 'SSC, Railway, UPSC, Odisha SSC — correct size, DPI and file size automatic',
+        'hero-btn': 'Choose Your Exam',
+        'stat-exams': 'Exams', 'stat-click': 'HD Output', 'stat-free': 'AI Enhance', 'stat-instant': 'Instant',
+        'exam-tag': 'Choose Your Exam',
+        'exam-heading': 'Which exam are you applying for?',
+        'exam-sub': 'Select exam — all settings automatic',
+        'trending-text': 'Trending Exams:',
+        'selected-exam': 'Selected:',
+        'change-btn': 'Change',
+        'spec-size': 'Size', 'spec-dpi': 'DPI', 'spec-min': 'Min', 'spec-max': 'Max',
+        'tab-photo': 'Photo', 'tab-signature': 'Signature', 'tab-fingerprint': 'Fingerprint',
+        'drop-text': 'Drag & Drop your photo here',
+        'drop-or': 'or',
+        'browse-btn': 'Browse File',
+        'drop-formats': 'JPG, PNG, JPEG supported',
+        'original-label': 'Original',
+        'converted-label': 'Converted',
+        'ready-tag': '✅ Ready',
+        'download-btn': '⬇️ Download Converted Photo',
+        'note-strong': 'Note:',
+        'note-text': 'Processed locally in your browser. We never store your images.',
+        'how-tag': 'Simple Process',
+        'how-heading': 'How does it work?',
+        'step1-title': 'Choose Exam',
+        'step1-desc': 'Select SSC, Railway, UPSC — whichever exam you are filling form for',
+        'step2-title': 'Upload Photo',
+        'step2-desc': 'Upload your photo, signature or fingerprint — any size works',
+        'step3-title': 'Download',
+        'step3-desc': 'Exact size, DPI and file size — all automatic. Download in one click',
+        'faq-tag': 'FAQ',
+        'faq-heading': 'Common Questions',
+        'faq-q1': 'Is it free? <span class="faq-arrow">▼</span>',
+        'faq-a1': 'Yes, basic features are completely free. AI Enhance is a premium feature.',
+        'faq-q2': 'Is my photo safe? <span class="faq-arrow">▼</span>',
+        'faq-a2': 'Absolutely. Your photo is processed only in your browser. We do not upload anything.',
+        'faq-q3': 'What does AI Enhance do? <span class="faq-arrow">▼</span>',
+        'faq-a3': 'AI Enhance sharpens, upscales and improves photo quality.',
+        'faq-q4': 'How does payment work? <span class="faq-arrow">▼</span>',
+        'faq-a4': 'Secure payment via Razorpay. Card, UPI, Net Banking all supported.',
+        'footer-text': 'Made with ❤️ for Indian Exam Aspirants'
+      },
+      hi: {
+        'nav-exams': 'Exams', 'nav-how': 'How it works', 'nav-faq': 'FAQ',
+        'hero-badge': '🔥 AI Enhance Available',
+        'hero-title': 'Sarkari Exam Form Varne ke liye<br /><span>Perfect Photo</span> — 1 Click',
+        'hero-sub': 'SSC, Railway, UPSC, Odisha SSC — sahi size, DPI aur file size automatic',
+        'hero-btn': 'Apna Exam Chuno',
+        'stat-exams': 'Exams', 'stat-click': 'HD Output', 'stat-free': 'AI Enhance', 'stat-instant': 'Instant',
+        'exam-tag': 'Choose Your Exam',
+        'exam-heading': 'Kaunsa exam ka form bhar rahe ho?',
+        'exam-sub': 'Exam select karo — sari settings automatic',
+        'trending-text': 'Trending Exams:',
+        'selected-exam': 'Selected:',
+        'change-btn': 'Change',
+        'spec-size': 'Size', 'spec-dpi': 'DPI', 'spec-min': 'Min', 'spec-max': 'Max',
+        'tab-photo': 'Photo', 'tab-signature': 'Signature', 'tab-fingerprint': 'Fingerprint',
+        'drop-text': 'Drag & Drop your photo here',
+        'drop-or': 'or',
+        'browse-btn': 'Browse File',
+        'drop-formats': 'JPG, PNG, JPEG supported',
+        'original-label': 'Original',
+        'converted-label': 'Converted',
+        'ready-tag': '✅ Ready',
+        'download-btn': '⬇️ Download Converted Photo',
+        'note-strong': 'Note:',
+        'note-text': 'Processed locally in your browser. We never store your images.',
+        'how-tag': 'Simple Process',
+        'how-heading': 'Kaise kaam karta hai?',
+        'step1-title': 'Exam chuno',
+        'step1-desc': 'SSC, Railway, UPSC — jo bhi exam ho select karo',
+        'step2-title': 'Photo upload karo',
+        'step2-desc': 'Photo, signature ya fingerprint — koi bhi size chalega',
+        'step3-title': 'Download karo',
+        'step3-desc': 'Exact size, DPI aur file size — Ek click mein download',
+        'faq-tag': 'FAQ',
+        'faq-heading': 'Common Questions',
+        'faq-q1': 'Kya yeh free hai? <span class="faq-arrow">▼</span>',
+        'faq-a1': 'Haan, basic features bilkul free hain. AI Enhance premium feature hai.',
+        'faq-q2': 'Meri photo safe hai? <span class="faq-arrow">▼</span>',
+        'faq-a2': 'Bilkul. Photo sirf browser mein process hoti hai. Server pe kuch upload nahi hota.',
+        'faq-q3': 'AI Enhance kya karta hai? <span class="faq-arrow">▼</span>',
+        'faq-a3': 'AI Enhance photo ko sharpen karta hai, upscale karta hai aur quality improve karta hai.',
+        'faq-q4': 'Payment kaise work karta hai? <span class="faq-arrow">▼</span>',
+        'faq-a4': 'Razorpay ke through secure payment. Card, UPI, Net Banking sab support hai.',
+        'footer-text': 'Made with ❤️ for Indian Exam Aspirants'
+      }
+    };
+
+    function toggleLanguage() {
+      const toggle = document.getElementById('langToggle');
+      toggle.classList.toggle('active');
+      const isEN = toggle.classList.contains('active');
+      const newLang = isEN ? 'en' : 'hi';
+      lang = newLang;
+      applyLanguage(newLang);
+      document.getElementById('langLabel').textContent = isEN ? 'EN' : 'HI';
+      document.getElementById('langLabel2').textContent = isEN ? 'HI' : 'EN';
+    }
+
+    function applyLanguage(langCode) {
+      const t = translations[langCode] || translations.hi;
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (t[key]) {
+          if (key === 'hero-title' || key === 'faq-q1' || key === 'faq-q2' || key === 'faq-q3' || key === 'faq-q4') {
+            el.innerHTML = t[key];
+          } else {
+            el.textContent = t[key];
+          }
+        }
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const toggle = document.getElementById('langToggle');
+      toggle.classList.remove('active');
+      document.getElementById('langLabel').textContent = 'HI';
+      document.getElementById('langLabel2').textContent = 'EN';
+      applyLanguage('hi');
+    });
+
+    // ===== NAVBAR SCROLL =====
+    window.addEventListener('scroll', () => {
+      document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 20);
+    });
+
+    // ===== PREMIUM MODAL =====
+    let selectedPlan = 'monthly';
+    let isPremium = false;
+
+    function openPremiumModal() {
+      document.getElementById('premiumModal').classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closePremiumModal() {
+      document.getElementById('premiumModal').classList.remove('show');
+      document.body.style.overflow = '';
+    }
+
+    function selectPlan(el, plan) {
+      document.querySelectorAll('.pricing .plan').forEach(p => p.classList.remove('active'));
+      el.classList.add('active');
+      selectedPlan = plan;
+    }
+
+    // ===== RAZORPAY PAYMENT =====
+    function initiatePayment() {
+      const btn = document.getElementById('subscribeBtn');
+      btn.disabled = true;
+      btn.textContent = '⏳ Processing...';
+
+      // IMPORTANT: Replace with your actual Razorpay Key ID
+      const RAZORPAY_KEY_ID = 'rzp_test_XXXXXXXXXXXXXXXX'; // 🔴 Replace with your key
+
+      const amount = selectedPlan === 'monthly' ? 9900 : 49900; // in paise (₹99 = 9900 paise)
+      const currency = 'INR';
+      const planName = selectedPlan === 'monthly' ? 'Monthly' : 'Yearly';
+
+      // Create order via backend API (you need to implement this)
+      // For demo, we'll use a mock order creation
+      // In production, create order on your server
+
+      const options = {
+        key: RAZORPAY_KEY_ID,
+        amount: amount,
+        currency: currency,
+        name: 'ExamPixel Pro',
+        description: 'Premium Subscription - ' + planName,
+        image: 'https://examixel.com/logo.png', // Optional: your logo
+        prefill: {
+          name: 'ExamPixel User',
+          email: 'user@example.com',
+          contact: '9999999999'
+        },
+        notes: {
+          plan: selectedPlan,
+          plan_name: planName
+        },
+        theme: {
+          color: '#4f46e5'
+        },
+        modal: {
+          ondismiss: function() {
+            btn.disabled = false;
+            btn.textContent = '🚀 Subscribe Now';
+          }
+        }
+      };
+
+      // In production, fetch order_id from your backend
+      // For demo, we'll create a mock payment
+      // ⚠️ This is a demo flow - in production, always create order on server
+
+      // Since we can't create a real order without backend, we'll simulate success
+      // In real implementation, you would:
+      // 1. Call your backend API to create order
+      // 2. Get order_id
+      // 3. Pass order_id in options
+
+      // Simulate successful payment (demo only)
+      // 🔴 Remove this in production and use real Razorpay flow
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.textContent = '🚀 Subscribe Now';
+        closePremiumModal();
+        activatePremium();
+        alert('🎉 Premium activated successfully! You now have access to AI Enhance and all premium features.');
+      }, 2000);
+
+      // REAL IMPLEMENTATION (uncomment when backend ready):
+      /*
+      fetch('/api/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: selectedPlan })
+      })
+      .then(res => res.json())
+      .then(data => {
+        options.order_id = data.order_id;
+        const razorpay = new Razorpay(options);
+        razorpay.on('payment.success', function(response) {
+          btn.disabled = false;
+          btn.textContent = '🚀 Subscribe Now';
+          closePremiumModal();
+          activatePremium();
+          alert('🎉 Payment successful! Premium activated.');
+        });
+        razorpay.on('payment.error', function(response) {
+          btn.disabled = false;
+          btn.textContent = '🚀 Subscribe Now';
+          alert('❌ Payment failed. Please try again.');
+        });
+        razorpay.open();
+      })
+      .catch(err => {
+        btn.disabled = false;
+        btn.textContent = '🚀 Subscribe Now';
+        alert('⚠️ Error: ' + err.message);
+      });
+      */
+    }
+
+    function activatePremium() {
+      isPremium = true;
+      const aiBtn = document.getElementById('aiEnhanceBtn');
+      aiBtn.classList.add('active');
+      aiBtn.querySelector('.lock').textContent = '✅';
+      aiBtn.querySelector('.badge-pro').textContent = 'ACTIVE';
+      aiBtn.querySelector('.label').textContent = '🤖 AI Enhance — Active';
+      aiBtn.onclick = null;
+      // Update stats
+      document.querySelector('.stat-card:nth-child(3) .stat-num').textContent = 'AI+';
+    }
+
+    // Close modal on outside click
+    document.getElementById('premiumModal').addEventListener('click', function(e) {
+      if (e.target === this) closePremiumModal();
+    });
+
+    // ===== SEARCH =====
+    function searchExams() {
+      const query = document.getElementById('searchInput').value.toLowerCase().trim();
+      document.querySelectorAll('.exam-card').forEach(card => {
+        const name = card.dataset.name ? card.dataset.name.toLowerCase() : '';
+        const match = name.includes(query);
+        if (query === '') {
+          card.classList.remove('hidden');
+        } else {
+          card.classList.toggle('hidden', !match);
+        }
+      });
+    }
+
+    function clearSearch() {
+      document.getElementById('searchInput').value = '';
+      document.querySelectorAll('.exam-card').forEach(card => card.classList.remove('hidden'));
+      filterState(currentState || 'all');
+    }
+
+    // ===== STATE FILTER =====
+    let currentState = 'all';
+
+    function filterState(state) {
+      currentState = state;
+      document.querySelectorAll('.state-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.state === state);
+      });
+      const searchQuery = document.getElementById('searchInput').value.toLowerCase().trim();
+      document.querySelectorAll('.exam-card').forEach(card => {
+        const cardState = card.dataset.state;
+        let show = true;
+        if (state === 'all') {
+          show = true;
+        } else if (state === 'custom') {
+          show = (cardState === 'custom');
+        } else {
+          show = (cardState === state || cardState === 'custom');
+        }
+        if (searchQuery !== '') {
+          const name = card.dataset.name ? card.dataset.name.toLowerCase() : '';
+          show = show && name.includes(searchQuery);
+        }
+        card.classList.toggle('hidden', !show);
+      });
+      const editor = document.getElementById('customEditor');
+      editor.classList.toggle('show', state === 'custom');
+    }
+
+    // ===== SCROLL TO EXAM =====
+    function scrollToExam(name) {
+      const cards = document.querySelectorAll('.exam-card');
+      cards.forEach(card => {
+        if (card.dataset.name === name) {
+          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          card.style.borderColor = '#f59e0b';
+          card.style.boxShadow = '0 0 0 4px rgba(245,158,11,0.3)';
+          setTimeout(() => {
+            card.style.borderColor = '';
+            card.style.boxShadow = '';
+          }, 3000);
+        }
+      });
+    }
+
+    // ===== CUSTOM SIZE =====
+    function applyCustomSize() {
+      const w = document.getElementById('customWidth').value || 200;
+      const h = document.getElementById('customHeight').value || 250;
+      const dpi = document.getElementById('customDpi').value || 200;
+      const maxSize = document.getElementById('customMaxSize').value || 100;
+
+      const customCard = document.querySelector('.exam-card[data-state="custom"]');
+      if (customCard) {
+        const name = 'Custom (' + w + '×' + h + 'px)';
+        selectExam(customCard, name, w + 'x' + h + 'px', dpi, '10KB', maxSize + 'KB');
+        document.getElementById('spec-size').textContent = w + '×' + h + ' px';
+        document.getElementById('spec-dpi').textContent = dpi;
+        document.getElementById('spec-max').textContent = maxSize + 'KB';
+        if (currentExam) {
+          currentExam.size = w + 'x' + h + 'px';
+          currentExam.maxSize = maxSize + 'KB';
+        }
+      }
+    }
+
+    // ===== EXAM SELECTION =====
+    let currentExam = null;
+    let uploadedFile = null;
+    let currentTab = 'photo';
+    let originalImageData = null;
+
+    function selectExam(card, name, size, dpi, minSize, maxSize) {
+      document.querySelectorAll('.exam-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      currentExam = { name, size, dpi, minSize, maxSize };
+      document.getElementById('selected-exam-name').textContent = name;
+      document.getElementById('spec-size').textContent = size + ' px';
+      document.getElementById('spec-dpi').textContent = dpi;
+      document.getElementById('spec-min').textContent = minSize;
+      document.getElementById('spec-max').textContent = maxSize;
+      const uploadSection = document.getElementById('upload-section');
+      uploadSection.style.display = 'block';
+      setTimeout(() => {
+        uploadSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+
+    function changeExam() {
+      document.getElementById('upload-section').style.display = 'none';
+      document.querySelectorAll('.exam-card').forEach(c => c.classList.remove('active'));
+      document.getElementById('preview-area').style.display = 'none';
+      document.getElementById('download-btn').style.display = 'none';
+      document.getElementById('drop-zone').style.display = 'block';
+      document.getElementById('file-input').value = '';
+      uploadedFile = null;
+      originalImageData = null;
+      document.getElementById('exams').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function switchTab(btn, tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      currentTab = tab;
+      document.getElementById('preview-area').style.display = 'none';
+      document.getElementById('download-btn').style.display = 'none';
+      document.getElementById('drop-zone').style.display = 'block';
+      document.getElementById('file-input').value = '';
+      uploadedFile = null;
+      originalImageData = null;
+    }
+
+    // ===== EDITOR CONTROLS =====
+    function updateQualityValue() {
+      const val = document.getElementById('qualitySlider').value;
+      document.getElementById('qualityValue').textContent = val + '%';
+      if (originalImageData) updatePreview();
+    }
+
+    function updatePreview() {
+      if (originalImageData) {
+        const img = new Image();
+        img.onload = function() {
+          convertImage(img, originalImageData);
+        };
+        img.src = originalImageData;
+      }
+    }
+
+    document.getElementById('bgColor').addEventListener('change', function() {
+      const customGroup = document.getElementById('customColorGroup');
+      customGroup.style.display = this.value === 'custom' ? 'block' : 'none';
+      if (originalImageData) updatePreview();
+    });
+
+    // ===== DRAG & DROP =====
+    const dropZone = document.getElementById('drop-zone');
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('drag-over');
+    });
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('drag-over');
+    });
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) {
+        processFile(file);
+      } else {
+        alert('Please upload a valid image file (JPG, PNG)');
+      }
+    });
+    dropZone.addEventListener('click', () => {
+      document.getElementById('file-input').click();
+    });
+
+    function handleFile(event) {
+      const file = event.target.files[0];
+      if (file) processFile(file);
+    }
+
+    // ===== FILE PROCESSING =====
+    function processFile(file) {
+      uploadedFile = file;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          originalImageData = e.target.result;
+          document.getElementById('original-img').src = e.target.result;
+          const sizeKB = Math.round(file.size / 1024);
+          document.getElementById('original-info').textContent =
+            img.width + 'x' + img.height + 'px • ' + sizeKB + 'KB';
+          convertImage(img, e.target.result);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function convertImage(originalImg, originalSrc) {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      let targetW = 200, targetH = 230;
+      if (currentExam) {
+        const sizeStr = currentExam.size;
+        if (sizeStr.includes('x') && sizeStr.includes('px')) {
+          const parts = sizeStr.replace('px','').split('x');
+          targetW = parseInt(parts[0]);
+          targetH = parseInt(parts[1]);
+        } else if (sizeStr === '3.5x4.5cm') {
+          targetW = 413; targetH = 531;
+        } else if (sizeStr.includes('x') && sizeStr.includes('cm')) {
+          const parts = sizeStr.replace('cm','').split('x');
+          targetW = Math.round(parseFloat(parts[0]) * 118);
+          targetH = Math.round(parseFloat(parts[1]) * 118);
+        }
+      }
+
+      // AI Enhance - if premium
+      if (isPremium) {
+        targetW = targetW * 2;
+        targetH = targetH * 2;
+      }
+
+      canvas.width = targetW;
+      canvas.height = targetH;
+
+      // Background color
+      let bg = document.getElementById('bgColor').value;
+      if (bg === 'custom') {
+        bg = document.getElementById('customColor').value;
+      }
+      if (bg === 'transparent') {
+        // Keep transparent
+      } else {
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, targetW, targetH);
+      }
+
+      const scale = Math.min(targetW / originalImg.width, targetH / originalImg.height);
+      const scaledW = originalImg.width * scale;
+      const scaledH = originalImg.height * scale;
+      const offsetX = (targetW - scaledW) / 2;
+      const offsetY = (targetH - scaledH) / 2;
+      ctx.drawImage(originalImg, offsetX, offsetY, scaledW, scaledH);
+
+      // AI Enhance: apply sharpening filter (simple convolution)
+      if (isPremium) {
+        const imageData = ctx.getImageData(0, 0, targetW, targetH);
+        const data = imageData.data;
+        const width = targetW;
+        const height = targetH;
+        const kernel = [0, -1, 0, -1, 5, -1, 0, -1, 0];
+        const kernelSize = 3;
+        const half = Math.floor(kernelSize / 2);
+        const output = new Uint8ClampedArray(data);
+
+        for (let y = half; y < height - half; y++) {
+          for (let x = half; x < width - half; x++) {
+            let r = 0, g = 0, b = 0;
+            for (let ky = 0; ky < kernelSize; ky++) {
+              for (let kx = 0; kx < kernelSize; kx++) {
+                const idx = ((y + ky - half) * width + (x + kx - half)) * 4;
+                const k = kernel[ky * kernelSize + kx];
+                r += data[idx] * k;
+                g += data[idx + 1] * k;
+                b += data[idx + 2] * k;
+              }
+            }
+            const idx = (y * width + x) * 4;
+            output[idx] = Math.min(255, Math.max(0, r));
+            output[idx + 1] = Math.min(255, Math.max(0, g));
+            output[idx + 2] = Math.min(255, Math.max(0, b));
+            output[idx + 3] = data[idx + 3];
+          }
+        }
+        ctx.putImageData(new ImageData(output, width, height), 0, 0);
+      }
+
+      // Quality & format
+      const quality = parseInt(document.getElementById('qualitySlider').value) / 100;
+      const format = document.getElementById('outputFormat').value;
+      let dataURL = canvas.toDataURL(format, quality);
+
+      if (format === 'image/png' && document.getElementById('bgColor').value === 'transparent') {
+        dataURL = canvas.toDataURL('image/png');
+      }
+
+      const maxKB = currentExam ? parseInt(currentExam.maxSize) : 50;
+      let quality2 = quality;
+      while (dataURL.length / 1024 * 0.75 > maxKB && quality2 > 0.2) {
+        quality2 -= 0.05;
+        dataURL = canvas.toDataURL(format, quality2);
+      }
+
+      document.getElementById('converted-img').src = dataURL;
+      document.getElementById('drop-zone').style.display = 'none';
+      document.getElementById('preview-area').style.display = 'flex';
+      document.getElementById('download-btn').style.display = 'block';
+      window._convertedDataURL = dataURL;
+      window._convertedCanvas = canvas;
+    }
+
+    function downloadImage() {
+      if (!window._convertedDataURL) return;
+      const examName = currentExam ? currentExam.name.replace(/\s+/g, '_') : 'exam';
+      const tabName = currentTab;
+      const format = document.getElementById('outputFormat').value;
+      let ext = 'jpg';
+      if (format === 'image/png') ext = 'png';
+      if (format === 'image/webp') ext = 'webp';
+      const link = document.createElement('a');
+      link.download = 'ExamPixel_' + examName + '_' + tabName + '.' + ext;
+      link.href = window._convertedDataURL;
+      link.click();
+    }
+
+    function toggleFaq(el) {
+      const answer = el.nextElementSibling;
+      const isOpen = el.classList.contains('open');
+      document.querySelectorAll('.faq-q').forEach(q => {
+        q.classList.remove('open');
+        q.nextElementSibling.style.display = 'none';
+      });
+      if (!isOpen) {
+        el.classList.add('open');
+        answer.style.display = 'block';
+      }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) target.scrollIntoView({ behavior: 'smooth' });
+      });
+    });
+  </script>
+</body>
+</html>

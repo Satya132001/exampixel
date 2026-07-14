@@ -280,7 +280,20 @@ function UploadSection({ selectedExam, language, user }) {
 
             {preview && (
               <>
-                <button type="button" className="btn-download" onClick={download}>{text.download}</button>
+                <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', margin: '10px 0' }}>
+      <button type="button" className="btn-download" onClick={download} style={{ margin: 0 }}>
+        {text.download}
+      </button>
+      
+      <button 
+        type="button" 
+        className="btn-download" 
+        style={{ margin: 0, backgroundColor: '#e5e7eb', color: '#1f2937', border: '1px solid #d1d5db' }} 
+        onClick={reset}
+      >
+        🔄 {text.change} Photo
+      </button>
+    </div>
                 {saveStatus === 'saving' && <div className="img-info" style={{textAlign:'center',marginTop:8}}>{language==='hi'?'सर्वर पर सेव हो रहा है…':'Saving to server…'}</div>}
                 {saveStatus === 'saved'  && <div className="img-info converted-tag" style={{textAlign:'center',marginTop:8}}>{language==='hi'?'☁️ सेव हो गया':'☁️ Saved to server'}{user?.id ? (language==='hi'?' • आपकी History में जुड़ गया':' • Added to your History') : ''}</div>}
                 {saveStatus === 'error'  && <div className="img-info" style={{textAlign:'center',marginTop:8,color:'#b91c1c'}}>{language==='hi'?'⚠️ सेव नहीं हुआ':'⚠️ Could not save to server'}</div>}

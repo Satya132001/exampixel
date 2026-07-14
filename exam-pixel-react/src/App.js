@@ -83,22 +83,6 @@ function AppInner() {
       />
 
       <div style={{ position: 'relative' }}>
-        {/* Account bar — now an overlay on top of the Hero's purple
-            gradient (top-right), so there's no separate light-colored
-            strip/gap above the Hero anymore. Move into Navbar.jsx itself
-            once that file is shared, so it sits properly next to the
-            Premium button. */}
-        <div className={`account-bar ${user ? 'logged-in' : ''}`}>
-          {user ? (
-            <>
-              <button onClick={() => setShowHistory(true)} className="account-btn fade-in-down">📁 My Photos</button>
-              <button onClick={handleLogout} className="account-btn-logout fade-in-down">Logout</button>
-            </>
-          ) : (
-            <button onClick={() => setShowAuth(true)} className="account-btn account-btn-shine">👤 Login</button>
-          )}
-        </div>
-
         {user && (
           <div className="hero-welcome-left">
             <span

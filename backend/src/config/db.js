@@ -1,25 +1,27 @@
 const { Pool } = require('pg');
 const dotenv = require('dotenv');
-
 dotenv.config();
+
+const isLocal = !process.env.DB_HOST || process.env.DB_HOST.includes('localhost') || process.env.DB_HOST.includes('127.0.0.1');
 
 const pool = new Pool({
   host: process.env.DB_HOST || 'localhost',
   port: process.env.DB_PORT || 5432,
   user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'Satya@13',  // ✅ PASSWORD UPDATE
+  password: process.env.DB_PASSWORD || 'Satya@13',
   database: process.env.DB_NAME || 'exampixel',
   max: 20,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 10000,
+  ssl: isLocal ? false : { rejectUnauthorized: false },
 });
 
-// Test connection
 pool.connect((err, client, release) => {
   if (err) {
     console.error('❌ Database connection error:', err.stack);
   } else {
     console.log('✅ PostgreSQL connected successfully');
+    console.log('   Connected to host:', process.env.DB_HOST || 'localhost (default — check your env vars if this is wrong!)');
     release();
   }
 });

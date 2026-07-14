@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { FaCrown } from 'react-icons/fa';
 import ThemeToggle from './ThemeToggle';
 
 const t = {
-  en: { exams: 'Exams', how: 'How it works', faq: 'FAQ', premium: 'Premium' },
-  hi: { exams: 'परीक्षाएं', how: 'कैसे काम करे', faq: 'सवाल-जवाब', premium: 'प्रीमियम' }
+  en: { exams: 'Exams', how: 'How it works', faq: 'FAQ', login: 'Login', history: 'My Photos', logout: 'Logout' },
+  hi: { exams: 'परीक्षाएं', how: 'कैसे काम करे', faq: 'सवाल-जवाब', login: 'लॉगिन', history: 'मेरी फोटो', logout: 'लॉगआउट' }
 };
 
-function Navbar({ language, setLanguage, isPremium, onPremiumClick }) {
+function Navbar({ language, setLanguage, user, onLoginClick, onLogoutClick, onHistoryClick }) {
   const [scrolled, setScrolled] = useState(false);
   const text = t[language] || t.hi;
 
@@ -22,12 +21,13 @@ function Navbar({ language, setLanguage, isPremium, onPremiumClick }) {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const firstName = (user?.full_name || user?.username || '').split(' ')[0];
+
   return (
     <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
       <div className="container nav-inner">
         <div className="logo">
           Exam<span>Pixel</span>
-          {isPremium && <span className="pro-badge">PRO</span>}
         </div>
 
         <ul className="nav-links">
@@ -44,11 +44,32 @@ function Navbar({ language, setLanguage, isPremium, onPremiumClick }) {
             </div>
           </li>
           <li><ThemeToggle /></li>
-          <li>
-            <button className="premium-btn" onClick={onPremiumClick}>
-              <FaCrown style={{ marginRight: '5px' }} />{text.premium}
-            </button>
-          </li>
+
+          {user ? (
+            <>
+              <li>
+                <span className="navbar-welcome fade-in-down">
+                  👋 {language === 'hi' ? 'नमस्ते' : 'Welcome'}, {firstName}
+                </span>
+              </li>
+              <li>
+                <button className="navbar-btn fade-in-down" onClick={onHistoryClick}>
+                  📁 {text.history}
+                </button>
+              </li>
+              <li>
+                <button className="navbar-btn-logout fade-in-down" onClick={onLogoutClick}>
+                  {text.logout}
+                </button>
+              </li>
+            </>
+          ) : (
+            <li>
+              <button className="navbar-btn navbar-btn-shine" onClick={onLoginClick}>
+                👤 {text.login}
+              </button>
+            </li>
+          )}
         </ul>
       </div>
     </nav>

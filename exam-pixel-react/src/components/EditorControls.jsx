@@ -1,15 +1,15 @@
 import React from 'react';
 
 const t = {
-  en: { format: 'Format', quality: 'Quality', bg: 'Background', ai: '🤖 AI Enhance — Sharpen & Upscale', on: 'ON', off: 'OFF' },
-  hi: { format: 'फॉर्मेट', quality: 'क्वालिटी', bg: 'बैकग्राउंड', ai: '🤖 AI एन्हांस — शार्पन और अपस्केल', on: 'ON', off: 'OFF' }
+  en: { format: 'Format', bg: 'Background', ai: '🤖 AI Enhance — Sharpen & Upscale', on: 'ON', off: 'OFF' },
+  hi: { format: 'फॉर्मेट', bg: 'बैकग्राउंड', ai: '🤖 AI एन्हांस — शार्पन और अपस्केल', on: 'ON', off: 'OFF' }
 };
 
-function EditorControls({ language, format, quality, bgColor, enhance, setFormat, setQuality, setBgColor, setEnhance }) {
+function EditorControls({ language, format, bgColor, enhance, setFormat, setBgColor, setEnhance }) {
   const text = t[language] || t.hi;
   return (
     <div className="editor-controls">
-      <div className="row">
+      <div className="row two-col">
         <div className="form-group">
           <label>{text.format}</label>
           <select value={format} onChange={e => setFormat(e.target.value)}>
@@ -17,12 +17,6 @@ function EditorControls({ language, format, quality, bgColor, enhance, setFormat
             <option value="image/png">PNG</option>
             <option value="image/webp">WEBP</option>
           </select>
-        </div>
-        <div className="form-group">
-          <label>{text.quality}</label>
-          <input type="range" min="10" max="100" value={quality}
-            onChange={e => setQuality(parseInt(e.target.value))} />
-          <div className="range-value">{quality}%</div>
         </div>
         <div className="form-group">
           <label>{text.bg}</label>

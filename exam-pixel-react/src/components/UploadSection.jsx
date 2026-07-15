@@ -81,6 +81,55 @@ function setJpegDpi(dataURL, dpi) {
   }
 }
 
+// ── JPEG minimum file-size padding ───────────────────────────────────
+// Some exam portals reject photos that are TOO SMALL, not just too big
+// (e.g. SSC wants 20-50KB). A clean, simple, low-detail headshot can
+// easily compress under the minimum even at max quality. This inserts a
+// standard JPEG "comment" (COM, marker 0xFFFE) segment right after the
+// JFIF header — every image viewer, library, and upload validator skips
+// comment segments entirely, so the photo itself is 100% unaffected;
+// only the file size changes to satisfy the minimum requirement.
+function padJpegToMinSize(dataURL, minKB) {
+  try {
+    const bytes = dataURLToBytes(dataURL);
+    const targetBytes = Math.ceil(minKB * 1024) + 512; // small safety margin over the exact minimum
+    if (bytes.length >= targetBytes) return dataURL;
+
+    const isJpeg = bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF && bytes[3] === 0xE0;
+    if (!isJpeg) return dataURL;
+
+    const appLength = (bytes[4] << 8) | bytes[5];
+    const insertAt = 4 + appLength; // right after the APP0/JFIF segment
+
+    let paddingNeeded = targetBytes - bytes.length;
+    if (paddingNeeded < 8) paddingNeeded = 8;
+    // Max COM segment content is 65533 bytes; split into multiple
+    // comment segments if a huge amount of padding is ever needed.
+    const newParts = [bytes.subarray(0, insertAt)];
+    let remaining = paddingNeeded;
+    while (remaining > 0) {
+      const segContent = Math.min(remaining - 4, 65533);
+      if (segContent <= 0) break;
+      const segLength = segContent + 2;
+      const header = new Uint8Array([0xFF, 0xFE, (segLength >> 8) & 0xFF, segLength & 0xFF]);
+      const content = new Uint8Array(segContent).fill(0x20); // harmless space filler
+      newParts.push(header, content);
+      remaining -= (4 + segContent);
+    }
+    newParts.push(bytes.subarray(insertAt));
+
+    const totalLength = newParts.reduce((sum, p) => sum + p.length, 0);
+    const merged = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const part of newParts) { merged.set(part, offset); offset += part.length; }
+
+    return bytesToDataURL(merged, 'image/jpeg');
+  } catch (e) {
+    console.error('Could not pad JPEG to minimum size:', e);
+    return dataURL;
+  }
+}
+
 function UploadSection({ selectedExam, language, user }) {
   const [mode,       setMode]      = useState('convert');
   const [preview,    setPreview]   = useState(null);
@@ -127,9 +176,34 @@ function UploadSection({ selectedExam, language, user }) {
     if (doEnhance) applyHDEnhance(ctx, w, h, canvas);
 
     const maxKB = parseInt(spec?.maxSize)||50;
+    const minKB = parseInt(spec?.minSize)||0;
     let q = DEFAULT_QUALITY, url = canvas.toDataURL(fmt, q);
+
+    // Step 1: compress down if we're over the exam's MAX size.
     while ((url.length*0.75/1024) > maxKB && q > 0.2) {
       q -= 0.05; url = canvas.toDataURL(fmt, q);
+    }
+
+    // Step 2: if we're now UNDER the exam's MIN size (common for small,
+    // clean, low-detail photos — they compress "too well"), raise quality
+    // back up as far as possible without going back over the max.
+    if (fmt === 'image/jpeg' && minKB > 0) {
+      while ((url.length*0.75/1024) < minKB && q < 0.98) {
+        q += 0.02;
+        const candidate = canvas.toDataURL(fmt, q);
+        if ((candidate.length*0.75/1024) > maxKB) break; // don't overshoot max
+        url = candidate;
+      }
+      // Step 3: if even max quality still isn't enough to reach the
+      // minimum (very common for tiny/simple headshots), pad the file
+      // with a standard JPEG comment (COM) marker — this is a real,
+      // widely-used, fully valid way to hit a minimum file size; every
+      // image viewer and government portal upload check simply skips
+      // comment segments, so the photo itself is completely unaffected.
+      const currentBytes = dataURLToBytes(url).length;
+      if (currentBytes < minKB * 1024) {
+        url = padJpegToMinSize(url, minKB);
+      }
     }
 
     // Embed the exam's required DPI directly into the JPEG file bytes —
@@ -139,8 +213,9 @@ function UploadSection({ selectedExam, language, user }) {
       url = setJpegDpi(url, dpiValue);
     }
 
+    const finalKB = Math.round(dataURLToBytes(url).length / 1024);
     setConverted(url);
-    setInfo(`${w}×${h}px • ${Math.round(url.length*0.75/1024)}KB${dpiValue && fmt==='image/jpeg' ? ` • ${dpiValue} DPI` : ''}`);
+    setInfo(`${w}×${h}px • ${finalKB}KB${dpiValue && fmt==='image/jpeg' ? ` • ${dpiValue} DPI` : ''}`);
     setCompare(false);
   }, []);
 

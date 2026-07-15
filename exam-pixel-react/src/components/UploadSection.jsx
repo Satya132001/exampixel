@@ -6,10 +6,11 @@ import QualityChecker from './QualityChecker';
 import AIBackgroundRemover from './AIBackgroundRemover';
 import BulkConvert from './BulkConvert';
 import { getTargetDimensions, applyHDEnhance, checkPhotoQuality } from '../utils/imageUtils';
+import { API_BASE_URL } from '../config';
 
 const t = {
   en: {
-    selected:'Selected:', change:'Change',
+    selected:'Selected:', change:'Change', changePhoto:'🔄 Change Photo',
     dragDrop:'Drag & Drop your photo here', or:'or',
     browse:'Browse File', formats:'JPG, PNG, JPEG supported',
     original:'Original', converted:'Converted',
@@ -19,9 +20,11 @@ const t = {
     modeConvert:'⚡ Auto Convert', modeCrop:'✂️ Crop',
     modeBg:'🖼️ BG Remove', modeBulk:'📦 Bulk',
     modeHint:'Mode:', compare:'↔️ Compare',
+    customWidth:'Width (px)', customHeight:'Height (px)',
+    customDpi:'DPI', customMax:'Max Size (KB)',
   },
   hi: {
-    selected:'चुनी गई परीक्षा:', change:'बदलें',
+    selected:'चुनी गई परीक्षा:', change:'बदलें', changePhoto:'🔄 फोटो बदलें',
     dragDrop:'अपनी फोटो यहाँ खींचें', or:'या',
     browse:'फ़ाइल चुनें', formats:'JPG, PNG, JPEG स्वीकार्य हैं',
     original:'मूल', converted:'परिवर्तित',
@@ -31,8 +34,52 @@ const t = {
     modeConvert:'⚡ ऑटो कन्वर्ट', modeCrop:'✂️ क्रॉप',
     modeBg:'🖼️ BG हटाएं', modeBulk:'📦 बल्क',
     modeHint:'मोड:', compare:'↔️ तुलना',
+    customWidth:'चौड़ाई (px)', customHeight:'ऊंचाई (px)',
+    customDpi:'DPI', customMax:'अधिकतम साइज़ (KB)',
   }
 };
+
+// Default starting JPEG quality for the auto-compress-to-target-size loop.
+// There's no user-facing quality slider anymore — the app just compresses
+// as much as needed to hit the exam's max file size automatically.
+const DEFAULT_QUALITY = 0.92;
+
+// ── JPEG DPI metadata patch ──────────────────────────────────────────
+// Browsers' canvas.toDataURL('image/jpeg') never writes a real DPI value
+// into the file — the JFIF header it produces has no meaningful density,
+// even though the pixel dimensions are exactly right. Some exam portals
+// check the DPI tag itself, so we patch those bytes directly after export.
+function dataURLToBytes(dataURL) {
+  const base64 = dataURL.split(',')[1];
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+function bytesToDataURL(bytes, mime) {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return `data:${mime};base64,${btoa(binary)}`;
+}
+function setJpegDpi(dataURL, dpi) {
+  if (!dpi || !dataURL.startsWith('data:image/jpeg')) return dataURL;
+  try {
+    const bytes = dataURLToBytes(dataURL);
+    // SOI (FFD8) + APP0 marker (FFE0) + length(2) + "JFIF\0"(5) + version(2) = offset 13
+    const isJpeg = bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF && bytes[3] === 0xE0;
+    const isJfif = isJpeg &&
+      bytes[6] === 0x4A && bytes[7] === 0x46 && bytes[8] === 0x49 && bytes[9] === 0x46 && bytes[10] === 0x00;
+    if (!isJfif) return dataURL;
+
+    bytes[13] = 1; // density units = pixels per inch
+    bytes[14] = (dpi >> 8) & 0xFF; bytes[15] = dpi & 0xFF; // X density
+    bytes[16] = (dpi >> 8) & 0xFF; bytes[17] = dpi & 0xFF; // Y density
+    return bytesToDataURL(bytes, 'image/jpeg');
+  } catch (e) {
+    console.error('Could not patch JPEG DPI metadata:', e);
+    return dataURL;
+  }
+}
 
 function UploadSection({ selectedExam, language, user }) {
   const [mode,       setMode]      = useState('convert');
@@ -42,22 +89,27 @@ function UploadSection({ selectedExam, language, user }) {
   const [isDragging, setDragging]  = useState(false);
   const [activeTab,  setActiveTab] = useState('photo');
   const [format,     setFormat]    = useState('image/jpeg');
-  const [quality,    setQuality]   = useState(90);
   const [bgColor,    setBgColor]   = useState('#ffffff');
   const [enhance,    setEnhance]   = useState(true);
   const [showCompare,setCompare]   = useState(false);
   const [qualResult, setQualResult]= useState(null);
   const [saveStatus, setSaveStatus]= useState(null); // null | 'saving' | 'saved' | 'error'
+  const [customSize, setCustomSize]= useState({ width: 200, height: 250, dpi: 200, maxKB: 50 });
   const fileRef    = useRef(null);
   const originalRef= useRef(null);
   const text = t[language] || t.en;
 
+  const isCustom = selectedExam?.icon === 'custom';
+
   // Per-document-type specs (e.g. NIELIT has different sizes for
   // Photo / Signature / Fingerprint). Falls back to the exam's top-level
-  // spec for exams that don't define per-type overrides.
-  const activeSpec = (selectedExam?.specs && selectedExam.specs[activeTab]) || selectedExam;
+  // spec for exams that don't define per-type overrides. For "Custom
+  // Size", the user's own editable width/height/DPI/max-size wins.
+  const activeSpec = isCustom
+    ? { size: `${customSize.width}x${customSize.height}`, dpi: String(customSize.dpi), minSize: selectedExam.minSize, maxSize: `${customSize.maxKB}KB` }
+    : (selectedExam?.specs && selectedExam.specs[activeTab]) || selectedExam;
 
-  const convertImage = useCallback((img, fmt, qual, bg, spec, doEnhance) => {
+  const convertImage = useCallback((img, fmt, bg, spec, doEnhance) => {
     const { w, h } = getTargetDimensions(spec?.size);
     const canvas = document.createElement('canvas');
     canvas.width = w; canvas.height = h;
@@ -73,12 +125,20 @@ function UploadSection({ selectedExam, language, user }) {
     if (doEnhance) applyHDEnhance(ctx, w, h, canvas);
 
     const maxKB = parseInt(spec?.maxSize)||50;
-    let q = qual/100, url = canvas.toDataURL(fmt, q);
+    let q = DEFAULT_QUALITY, url = canvas.toDataURL(fmt, q);
     while ((url.length*0.75/1024) > maxKB && q > 0.2) {
       q -= 0.05; url = canvas.toDataURL(fmt, q);
     }
+
+    // Embed the exam's required DPI directly into the JPEG file bytes —
+    // canvas export alone never sets this correctly.
+    const dpiValue = parseInt(spec?.dpi) || null;
+    if (fmt === 'image/jpeg' && dpiValue) {
+      url = setJpegDpi(url, dpiValue);
+    }
+
     setConverted(url);
-    setInfo(`${w}×${h}px • ${Math.round(url.length*0.75/1024)}KB`);
+    setInfo(`${w}×${h}px • ${Math.round(url.length*0.75/1024)}KB${dpiValue && fmt==='image/jpeg' ? ` • ${dpiValue} DPI` : ''}`);
     setCompare(false);
   }, []);
 
@@ -96,17 +156,17 @@ function UploadSection({ selectedExam, language, user }) {
         // Quality check
         setQualResult(checkPhotoQuality(img));
         // Convert
-        convertImage(img, format, quality, bgColor, activeSpec, enhance);
+        convertImage(img, format, bgColor, activeSpec, enhance);
       };
       img.src = src;
     };
     reader.readAsDataURL(file);
-  }, [format, quality, bgColor, activeSpec, enhance, convertImage]);
+  }, [format, bgColor, activeSpec, enhance, convertImage]);
 
-  const reconvert = useCallback((fmt, qual, bg, doEnhance) => {
+  const reconvert = useCallback((fmt, bg, doEnhance, spec) => {
     if (!originalRef.current) return;
     const img = new Image();
-    img.onload = () => convertImage(img, fmt, qual, bg, activeSpec, doEnhance);
+    img.onload = () => convertImage(img, fmt, bg, spec || activeSpec, doEnhance);
     img.src = originalRef.current;
   }, [activeSpec, convertImage]);
 
@@ -115,6 +175,15 @@ function UploadSection({ selectedExam, language, user }) {
     setCompare(false); setQualResult(null); setSaveStatus(null);
     originalRef.current = null;
     if (fileRef.current) fileRef.current.value = '';
+  };
+
+  const updateCustomSize = (patch) => {
+    const next = { ...customSize, ...patch };
+    setCustomSize(next);
+    if (originalRef.current) {
+      const nextSpec = { size: `${next.width}x${next.height}`, dpi: String(next.dpi), minSize: selectedExam.minSize, maxSize: `${next.maxKB}KB` };
+      reconvert(format, bgColor, enhance, nextSpec);
+    }
   };
 
   // Sends the final converted image to the backend so it's saved in
@@ -136,7 +205,7 @@ function UploadSection({ selectedExam, language, user }) {
       fd.append('docType', activeTab);
       if (user?.id) fd.append('userId', user.id);
 
-      const res = await fetch('/api/images/save', { method: 'POST', body: fd });
+      const res = await fetch(`${API_BASE_URL}/api/images/save`, { method: 'POST', body: fd });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.message || 'Save failed');
       setSaveStatus('saved');
@@ -209,13 +278,38 @@ function UploadSection({ selectedExam, language, user }) {
               ))}
             </div>
 
+            {/* ── Custom Size editable fields ── */}
+            {isCustom && (
+              <div className="custom-size-panel">
+                <div className="custom-size-field">
+                  <label>{text.customWidth}</label>
+                  <input type="number" min="50" max="2000" value={customSize.width}
+                    onChange={e => updateCustomSize({ width: parseInt(e.target.value) || 1 })} />
+                </div>
+                <div className="custom-size-field">
+                  <label>{text.customHeight}</label>
+                  <input type="number" min="50" max="2000" value={customSize.height}
+                    onChange={e => updateCustomSize({ height: parseInt(e.target.value) || 1 })} />
+                </div>
+                <div className="custom-size-field">
+                  <label>{text.customDpi}</label>
+                  <input type="number" min="72" max="600" value={customSize.dpi}
+                    onChange={e => updateCustomSize({ dpi: parseInt(e.target.value) || 72 })} />
+                </div>
+                <div className="custom-size-field">
+                  <label>{text.customMax}</label>
+                  <input type="number" min="5" max="2000" value={customSize.maxKB}
+                    onChange={e => updateCustomSize({ maxKB: parseInt(e.target.value) || 5 })} />
+                </div>
+              </div>
+            )}
+
             <EditorControls
               language={language}
-              format={format} quality={quality} bgColor={bgColor} enhance={enhance}
-              setFormat={v=>{setFormat(v);reconvert(v,quality,bgColor,enhance);}}
-              setQuality={v=>{setQuality(v);reconvert(format,v,bgColor,enhance);}}
-              setBgColor={v=>{setBgColor(v);reconvert(format,quality,v,enhance);}}
-              setEnhance={v=>{setEnhance(v);reconvert(format,quality,bgColor,v);}}
+              format={format} bgColor={bgColor} enhance={enhance}
+              setFormat={v=>{setFormat(v);reconvert(v,bgColor,enhance);}}
+              setBgColor={v=>{setBgColor(v);reconvert(format,v,enhance);}}
+              setEnhance={v=>{setEnhance(v);reconvert(format,bgColor,v);}}
             />
 
             <div className="upload-tabs">
@@ -280,20 +374,10 @@ function UploadSection({ selectedExam, language, user }) {
 
             {preview && (
               <>
-                <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', margin: '10px 0' }}>
-      <button type="button" className="btn-download" onClick={download} style={{ margin: 0 }}>
-        {text.download}
-      </button>
-      
-      <button 
-        type="button" 
-        className="btn-download" 
-        style={{ margin: 0, backgroundColor: '#e5e7eb', color: '#1f2937', border: '1px solid #d1d5db' }} 
-        onClick={reset}
-      >
-        🔄 {text.change} Photo
-      </button>
-    </div>
+                <div className="preview-footer-actions">
+                  <button type="button" className="btn-change-photo" onClick={reset}>{text.changePhoto}</button>
+                  <button type="button" className="btn-download" onClick={download}>{text.download}</button>
+                </div>
                 {saveStatus === 'saving' && <div className="img-info" style={{textAlign:'center',marginTop:8}}>{language==='hi'?'सर्वर पर सेव हो रहा है…':'Saving to server…'}</div>}
                 {saveStatus === 'saved'  && <div className="img-info converted-tag" style={{textAlign:'center',marginTop:8}}>{language==='hi'?'☁️ सेव हो गया':'☁️ Saved to server'}{user?.id ? (language==='hi'?' • आपकी History में जुड़ गया':' • Added to your History') : ''}</div>}
                 {saveStatus === 'error'  && <div className="img-info" style={{textAlign:'center',marginTop:8,color:'#b91c1c'}}>{language==='hi'?'⚠️ सेव नहीं हुआ':'⚠️ Could not save to server'}</div>}

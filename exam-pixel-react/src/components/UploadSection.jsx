@@ -61,6 +61,21 @@ function bytesToDataURL(bytes, mime) {
   for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
   return `data:${mime};base64,${btoa(binary)}`;
 }
+// Some exams give a single DPI (e.g. "200"), others give a range (e.g.
+// NIELIT's "96-300"). For a range, using plain parseInt() grabs only the
+// low end — this instead targets the midpoint, so the exported photo
+// sits comfortably inside the allowed range rather than at its floor.
+function parseDpiValue(dpiStr) {
+  if (!dpiStr) return null;
+  const str = String(dpiStr).trim();
+  if (str.includes('-')) {
+    const [lo, hi] = str.split('-').map(s => parseInt(s, 10));
+    if (!isNaN(lo) && !isNaN(hi)) return Math.round((lo + hi) / 2);
+  }
+  const n = parseInt(str, 10);
+  return isNaN(n) ? null : n;
+}
+
 function setJpegDpi(dataURL, dpi) {
   if (!dpi || !dataURL.startsWith('data:image/jpeg')) return dataURL;
   try {
@@ -177,6 +192,11 @@ function UploadSection({ selectedExam, language, user }) {
 
     const maxKB = parseInt(spec?.maxSize)||50;
     const minKB = parseInt(spec?.minSize)||0;
+    // Aim for the middle of the allowed range, not just barely clearing
+    // the minimum — gives a healthier-quality result within the exam's
+    // own rules instead of the smallest/lowest-quality file that's
+    // technically still valid.
+    const midKB = minKB > 0 ? (minKB + maxKB) / 2 : null;
     let q = DEFAULT_QUALITY, url = canvas.toDataURL(fmt, q);
 
     // Step 1: compress down if we're over the exam's MAX size.
@@ -184,31 +204,35 @@ function UploadSection({ selectedExam, language, user }) {
       q -= 0.05; url = canvas.toDataURL(fmt, q);
     }
 
-    // Step 2: if we're now UNDER the exam's MIN size (common for small,
-    // clean, low-detail photos — they compress "too well"), raise quality
-    // back up as far as possible without going back over the max.
-    if (fmt === 'image/jpeg' && minKB > 0) {
-      while ((url.length*0.75/1024) < minKB && q < 0.98) {
+    // Step 2: if we're now well UNDER the middle of the allowed range
+    // (common for small, clean, low-detail photos — they compress "too
+    // well"), raise quality back up toward that midpoint, without going
+    // back over the max.
+    if (fmt === 'image/jpeg' && midKB) {
+      while ((url.length*0.75/1024) < midKB && q < 0.98) {
         q += 0.02;
         const candidate = canvas.toDataURL(fmt, q);
         if ((candidate.length*0.75/1024) > maxKB) break; // don't overshoot max
         url = candidate;
       }
       // Step 3: if even max quality still isn't enough to reach the
-      // minimum (very common for tiny/simple headshots), pad the file
-      // with a standard JPEG comment (COM) marker — this is a real,
-      // widely-used, fully valid way to hit a minimum file size; every
-      // image viewer and government portal upload check simply skips
-      // comment segments, so the photo itself is completely unaffected.
+      // exam's strict MIN size (very common for tiny/simple headshots),
+      // pad the file with a standard JPEG comment (COM) marker — this is
+      // a real, widely-used, fully valid way to hit a minimum file size;
+      // every image viewer and government portal upload check simply
+      // skips comment segments, so the photo itself is completely
+      // unaffected.
       const currentBytes = dataURLToBytes(url).length;
-      if (currentBytes < minKB * 1024) {
+      if (minKB > 0 && currentBytes < minKB * 1024) {
         url = padJpegToMinSize(url, minKB);
       }
     }
 
     // Embed the exam's required DPI directly into the JPEG file bytes —
-    // canvas export alone never sets this correctly.
-    const dpiValue = parseInt(spec?.dpi) || null;
+    // canvas export alone never sets this correctly. For exams that give
+    // a DPI *range* (e.g. NIELIT's "96-300"), use the midpoint rather
+    // than the lowest end of the range.
+    const dpiValue = parseDpiValue(spec?.dpi);
     if (fmt === 'image/jpeg' && dpiValue) {
       url = setJpegDpi(url, dpiValue);
     }

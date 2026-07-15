@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import EditorControls from './EditorControls';
 import ImageCropper from './ImageCropper';
 import ComparisonSlider from './ComparisonSlider';
@@ -105,9 +105,11 @@ function UploadSection({ selectedExam, language, user }) {
   // Photo / Signature / Fingerprint). Falls back to the exam's top-level
   // spec for exams that don't define per-type overrides. For "Custom
   // Size", the user's own editable width/height/DPI/max-size wins.
-  const activeSpec = isCustom
-    ? { size: `${customSize.width}x${customSize.height}`, dpi: String(customSize.dpi), minSize: selectedExam.minSize, maxSize: `${customSize.maxKB}KB` }
-    : (selectedExam?.specs && selectedExam.specs[activeTab]) || selectedExam;
+  const activeSpec = useMemo(() => (
+    isCustom
+      ? { size: `${customSize.width}x${customSize.height}`, dpi: String(customSize.dpi), minSize: selectedExam.minSize, maxSize: `${customSize.maxKB}KB` }
+      : (selectedExam?.specs && selectedExam.specs[activeTab]) || selectedExam
+  ), [isCustom, customSize, selectedExam, activeTab]);
 
   const convertImage = useCallback((img, fmt, bg, spec, doEnhance) => {
     const { w, h } = getTargetDimensions(spec?.size);

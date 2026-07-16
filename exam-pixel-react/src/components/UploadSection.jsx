@@ -16,6 +16,7 @@ const t = {
     original:'Original', converted:'Converted',
     ready:'✅ Ready for Exam', download:'⬇️ Download Converted Photo',
     note:'Processed locally in your browser. We never store your images.',
+    trustBadge:'🔒 Secure & Private — processed in your browser',
     photo:'📸 Photo', sig:'✍️ Signature', finger:'🖐️ Fingerprint',
     modeConvert:'⚡ Auto Convert', modeCrop:'✂️ Crop',
     modeBg:'🖼️ BG Remove', modeBulk:'📦 Bulk',
@@ -28,6 +29,7 @@ const t = {
     dragDrop:'अपनी फोटो यहाँ खींचें', or:'या',
     browse:'फ़ाइल चुनें', formats:'JPG, PNG, JPEG स्वीकार्य हैं',
     original:'मूल', converted:'परिवर्तित',
+    trustBadge:'🔒 सुरक्षित और निजी — आपके ब्राउज़र में ही प्रोसेस होता है',
     ready:'✅ परीक्षा के लिए तैयार', download:'⬇️ परिवर्तित फोटो डाउनलोड करें',
     note:'आपकी फोटो केवल आपके ब्राउज़र में प्रोसेस होती है।',
     photo:'📸 फोटो', sig:'✍️ हस्ताक्षर', finger:'🖐️ अंगूठा',
@@ -322,7 +324,11 @@ function UploadSection({ selectedExam, language, user }) {
     const a = document.createElement('a');
     a.download = `ExamPixel_${(selectedExam?.name||'exam').replace(/[\s/]+/g,'_')}_${activeTab}.${ext}`;
     a.href = converted; a.click();
-    saveToServer(converted, ext);
+    // Only touch the server if the person is logged in — that's the only
+    // case where saving is actually useful (their "My Photos" history).
+    // For everyone else, downloading stays 100% local, matching the
+    // privacy note shown on this page.
+    if (user?.id) saveToServer(converted, ext);
   };
 
   if (!selectedExam) return null;
@@ -428,19 +434,22 @@ function UploadSection({ selectedExam, language, user }) {
 
             {/* Drop zone */}
             {!preview ? (
-              <div className={`drop-zone ${isDragging?'drag-over':''}`}
-                onDragOver={e=>{e.preventDefault();setDragging(true);}}
-                onDragLeave={()=>setDragging(false)}
-                onDrop={e=>{e.preventDefault();setDragging(false);const f=e.dataTransfer.files[0];if(f?.type.startsWith('image/'))handleFile(f);}}
-                onClick={()=>fileRef.current?.click()}>
-                <div className="drop-icon">📤</div>
-                <div className="drop-text">{text.dragDrop}</div>
-                <div className="drop-sub">{text.or}</div>
-                <label className="btn-upload">{text.browse}</label>
-                <input ref={fileRef} type="file" accept="image/*" hidden
-                  onChange={e=>{if(e.target.files[0])handleFile(e.target.files[0]);}} />
-                <div className="drop-formats">{text.formats}</div>
-              </div>
+              <>
+                <div className="trust-badge">{text.trustBadge}</div>
+                <div className={`drop-zone ${isDragging?'drag-over':''}`}
+                  onDragOver={e=>{e.preventDefault();setDragging(true);}}
+                  onDragLeave={()=>setDragging(false)}
+                  onDrop={e=>{e.preventDefault();setDragging(false);const f=e.dataTransfer.files[0];if(f?.type.startsWith('image/'))handleFile(f);}}
+                  onClick={()=>fileRef.current?.click()}>
+                  <div className="drop-icon">📤</div>
+                  <div className="drop-text">{text.dragDrop}</div>
+                  <div className="drop-sub">{text.or}</div>
+                  <label className="btn-upload">{text.browse}</label>
+                  <input ref={fileRef} type="file" accept="image/*" hidden
+                    onChange={e=>{if(e.target.files[0])handleFile(e.target.files[0]);}} />
+                  <div className="drop-formats">{text.formats}</div>
+                </div>
+              </>
             ) : (
               <>
                 {/* Toggle between side-by-side and comparison slider */}
@@ -475,6 +484,7 @@ function UploadSection({ selectedExam, language, user }) {
 
             {preview && (
               <>
+                <div className="trust-badge">{text.trustBadge}</div>
                 <div className="preview-footer-actions">
                   <button type="button" className="btn-change-photo" onClick={reset}>{text.changePhoto}</button>
                   <button type="button" className="btn-download" onClick={download}>{text.download}</button>

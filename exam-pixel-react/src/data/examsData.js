@@ -69,9 +69,9 @@ export const examsData = [
     name: 'DSSSB',
     icon: 'ssc',
     state: 'allindia',
-    detail: '200×230 px • 200 DPI',
+    detail: '480×672 px • 200 DPI',
     maxSize: '50KB',
-    size: '200x230',
+    size: '480x672',
     dpi: '200',
     minSize: '10KB',
     trending: 5,
@@ -81,7 +81,7 @@ export const examsData = [
     // official DSSSB application form.
     specs: {
       photo: {
-        size: '200x230', dpi: '200', minSize: '10KB', maxSize: '50KB',
+        size: '480x672', dpi: '200', minSize: '10KB', maxSize: '50KB',
       },
       signature: {
         size: '140x110', dpi: '200', minSize: '10KB', maxSize: '40KB',

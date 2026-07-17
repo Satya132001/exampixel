@@ -1,9 +1,5 @@
 import React from 'react';
-
-const ICONS = {
-  ssc:'🏛️', railway:'🚂', upsc:'🇮🇳', ibps:'🏦',
-  odisha:'🧡', up:'👮', bihar:'📯', mp:'🛡️', raj:'💗', custom:'⚙️', nielit:'💻'
-};
+import { EXAM_ICON_COMPONENTS, GearIcon } from './ExamIcons';
 
 export default function ExamCard({ exam, isSelected, onSelect }) {
   const badge = exam.trending >= 8
@@ -14,6 +10,8 @@ export default function ExamCard({ exam, isSelected, onSelect }) {
         ? <span className="exam-badge popular">⭐ Popular</span>
         : null;
 
+  const IconComponent = EXAM_ICON_COMPONENTS[exam.icon] || GearIcon;
+
   return (
     <div
       className={`exam-card ${isSelected ? 'active' : ''}`}
@@ -21,7 +19,9 @@ export default function ExamCard({ exam, isSelected, onSelect }) {
       title={`${exam.name} — ${exam.detail}`}
     >
       {badge}
-      <div className={`exam-icon ${exam.icon}`}>{ICONS[exam.icon] || '📄'}</div>
+      <div className={`exam-icon ${exam.icon}`}>
+        <IconComponent />
+      </div>
       <div className="exam-name">{exam.name}</div>
       <div className="exam-detail">{exam.detail}</div>
       <div className="exam-size">Max {exam.maxSize}</div>

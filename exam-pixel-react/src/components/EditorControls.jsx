@@ -1,11 +1,11 @@
 import React from 'react';
 
 const t = {
-  en: { format: 'Format', bg: 'Background', ai: '🤖 AI Enhance — Sharpen & Upscale', on: 'ON', off: 'OFF' },
-  hi: { format: 'फॉर्मेट', bg: 'बैकग्राउंड', ai: '🤖 AI एन्हांस — शार्पन और अपस्केल', on: 'ON', off: 'OFF' }
+  en: { format: 'Format', bg: 'Background' },
+  hi: { format: 'फॉर्मेट', bg: 'बैकग्राउंड' }
 };
 
-function EditorControls({ language, format, bgColor, enhance, setFormat, setBgColor, setEnhance }) {
+function EditorControls({ language, format, bgColor, setFormat, setBgColor }) {
   const text = t[language] || t.hi;
   return (
     <div className="editor-controls">
@@ -27,19 +27,6 @@ function EditorControls({ language, format, bgColor, enhance, setFormat, setBgCo
             <option value="#000000">Black</option>
             <option value="#4f46e5">Exam Blue</option>
           </select>
-        </div>
-      </div>
-      <div className="row">
-        <div className="form-group" style={{ gridColumn: 'span 3' }}>
-          <div
-            className={`ai-enhance ${enhance ? 'active' : ''}`}
-            onClick={() => setEnhance(!enhance)}
-            style={{ cursor: 'pointer' }}
-          >
-            <span className="lock">{enhance ? '✅' : '⬜'}</span>
-            <span className="label">{text.ai}</span>
-            <span className="badge-pro">{enhance ? text.on : text.off}</span>
-          </div>
         </div>
       </div>
     </div>

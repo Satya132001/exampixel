@@ -1,7 +1,6 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import EditorControls from './EditorControls';
 import ImageCropper from './ImageCropper';
-import ComparisonSlider from './ComparisonSlider';
 import QualityChecker from './QualityChecker';
 import AIBackgroundRemover from './AIBackgroundRemover';
 import BulkConvert from './BulkConvert';
@@ -20,7 +19,7 @@ const t = {
     photo:'📸 Photo', sig:'✍️ Signature', finger:'🖐️ Fingerprint',
     modeConvert:'⚡ Auto Convert', modeCrop:'✂️ Crop',
     modeBg:'🖼️ BG Remove', modeBulk:'📦 Bulk',
-    modeHint:'Mode:', compare:'↔️ Compare',
+    modeHint:'Mode:', processing:'Processing your photo…',
     customWidth:'Width (px)', customHeight:'Height (px)',
     customDpi:'DPI', customMax:'Max Size (KB)',
   },
@@ -35,7 +34,7 @@ const t = {
     photo:'📸 फोटो', sig:'✍️ हस्ताक्षर', finger:'🖐️ अंगूठा',
     modeConvert:'⚡ ऑटो कन्वर्ट', modeCrop:'✂️ क्रॉप',
     modeBg:'🖼️ BG हटाएं', modeBulk:'📦 बल्क',
-    modeHint:'मोड:', compare:'↔️ तुलना',
+    modeHint:'मोड:', processing:'आपकी फोटो प्रोसेस हो रही है…',
     customWidth:'चौड़ाई (px)', customHeight:'ऊंचाई (px)',
     customDpi:'DPI', customMax:'अधिकतम साइज़ (KB)',
   }
@@ -156,8 +155,7 @@ function UploadSection({ selectedExam, language, user }) {
   const [activeTab,  setActiveTab] = useState('photo');
   const [format,     setFormat]    = useState('image/jpeg');
   const [bgColor,    setBgColor]   = useState('#ffffff');
-  const [enhance,    setEnhance]   = useState(true);
-  const [showCompare,setCompare]   = useState(false);
+  const [isProcessing, setProcessing] = useState(false);
   const [qualResult, setQualResult]= useState(null);
   const [saveStatus, setSaveStatus]= useState(null); // null | 'saving' | 'saved' | 'error'
   const [customSize, setCustomSize]= useState({ width: 200, height: 250, dpi: 200, maxKB: 50 });
@@ -177,7 +175,7 @@ function UploadSection({ selectedExam, language, user }) {
       : (selectedExam?.specs && selectedExam.specs[activeTab]) || selectedExam
   ), [isCustom, customSize, selectedExam, activeTab]);
 
-  const convertImage = useCallback((img, fmt, bg, spec, doEnhance) => {
+  const convertImage = useCallback((img, fmt, bg, spec) => {
     const { w, h } = getTargetDimensions(spec?.size);
     const canvas = document.createElement('canvas');
     canvas.width = w; canvas.height = h;
@@ -190,7 +188,7 @@ function UploadSection({ selectedExam, language, user }) {
     const sW = img.width*scale, sH = img.height*scale;
     ctx.drawImage(img, (w-sW)/2, (h-sH)/2, sW, sH);
 
-    if (doEnhance) applyHDEnhance(ctx, w, h, canvas);
+    applyHDEnhance(ctx, w, h, canvas);
 
     const maxKB = parseInt(spec?.maxSize)||50;
     const minKB = parseInt(spec?.minSize)||0;
@@ -242,40 +240,43 @@ function UploadSection({ selectedExam, language, user }) {
     const finalKB = Math.round(dataURLToBytes(url).length / 1024);
     setConverted(url);
     setInfo(`${w}×${h}px • ${finalKB}KB${dpiValue && fmt==='image/jpeg' ? ` • ${dpiValue} DPI` : ''}`);
-    setCompare(false);
+    setProcessing(false);
   }, []);
 
   const handleFile = useCallback((file) => {
     setSaveStatus(null);
+    setProcessing(true);
     const reader = new FileReader();
     reader.onload = e => {
       const src = e.target.result;
       originalRef.current = src;
       setPreview(src);
-      setCompare(false);
 
       const img = new Image();
       img.onload = () => {
         // Quality check
         setQualResult(checkPhotoQuality(img));
-        // Convert
-        convertImage(img, format, bgColor, activeSpec, enhance);
+        // Convert — wrapped in a tiny delay so the processing spinner
+        // actually gets a chance to paint before the (synchronous) canvas
+        // work runs.
+        setTimeout(() => convertImage(img, format, bgColor, activeSpec), 30);
       };
       img.src = src;
     };
     reader.readAsDataURL(file);
-  }, [format, bgColor, activeSpec, enhance, convertImage]);
+  }, [format, bgColor, activeSpec, convertImage]);
 
-  const reconvert = useCallback((fmt, bg, doEnhance, spec) => {
+  const reconvert = useCallback((fmt, bg, spec) => {
     if (!originalRef.current) return;
+    setProcessing(true);
     const img = new Image();
-    img.onload = () => convertImage(img, fmt, bg, spec || activeSpec, doEnhance);
+    img.onload = () => setTimeout(() => convertImage(img, fmt, bg, spec || activeSpec), 30);
     img.src = originalRef.current;
   }, [activeSpec, convertImage]);
 
   const reset = () => {
     setPreview(null); setConverted(null); setInfo('');
-    setCompare(false); setQualResult(null); setSaveStatus(null);
+    setQualResult(null); setSaveStatus(null); setProcessing(false);
     originalRef.current = null;
     if (fileRef.current) fileRef.current.value = '';
   };
@@ -285,7 +286,7 @@ function UploadSection({ selectedExam, language, user }) {
     setCustomSize(next);
     if (originalRef.current) {
       const nextSpec = { size: `${next.width}x${next.height}`, dpi: String(next.dpi), minSize: selectedExam.minSize, maxSize: `${next.maxKB}KB` };
-      reconvert(format, bgColor, enhance, nextSpec);
+      reconvert(format, bgColor, nextSpec);
     }
   };
 
@@ -413,10 +414,9 @@ function UploadSection({ selectedExam, language, user }) {
 
             <EditorControls
               language={language}
-              format={format} bgColor={bgColor} enhance={enhance}
-              setFormat={v=>{setFormat(v);reconvert(v,bgColor,enhance);}}
-              setBgColor={v=>{setBgColor(v);reconvert(format,v,enhance);}}
-              setEnhance={v=>{setEnhance(v);reconvert(format,bgColor,v);}}
+              format={format} bgColor={bgColor}
+              setFormat={v=>{setFormat(v);reconvert(v,bgColor);}}
+              setBgColor={v=>{setBgColor(v);reconvert(format,v);}}
             />
 
             <div className="upload-tabs">
@@ -451,35 +451,29 @@ function UploadSection({ selectedExam, language, user }) {
                 </div>
               </>
             ) : (
-              <>
-                {/* Toggle between side-by-side and comparison slider */}
-                {converted && (
-                  <div style={{display:'flex',justifyContent:'flex-end',marginBottom:8}}>
-                    <button type="button" onClick={()=>setCompare(c=>!c)}
-                      style={{background:showCompare?'#4f46e5':'#f0f0f8',color:showCompare?'white':'#888',border:'none',borderRadius:50,padding:'6px 16px',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
-                      {text.compare} {showCompare ? '▼' : '▶'}
-                    </button>
+              <div className="preview-area">
+                <div className="preview-box">
+                  <div className="preview-label">{text.original}</div>
+                  <div className="preview-thumb-wrap">
+                    <img src={preview} alt="Original" />
+                    {isProcessing && (
+                      <div className="processing-overlay">
+                        <span className="spinner" />
+                        <span className="processing-text">{text.processing}</span>
+                      </div>
+                    )}
                   </div>
-                )}
-
-                {showCompare && converted ? (
-                  <ComparisonSlider originalSrc={preview} convertedSrc={converted} language={language} />
-                ) : (
-                  <div className="preview-area">
-                    <div className="preview-box">
-                      <div className="preview-label">{text.original}</div>
-                      <img src={preview} alt="Original" />
-                      <div className="img-info">Uploaded</div>
-                    </div>
-                    <div className="preview-arrow">➡️</div>
-                    <div className="preview-box">
-                      <div className="preview-label">{text.converted}</div>
-                      <img src={converted} alt="Converted" />
-                      <div className="img-info converted-tag">{text.ready} • {convInfo}</div>
-                    </div>
+                  <div className="img-info">Uploaded</div>
+                </div>
+                <div className="preview-arrow">➡️</div>
+                <div className="preview-box">
+                  <div className="preview-label">{text.converted}</div>
+                  <div className="preview-thumb-wrap">
+                    {converted && <img src={converted} alt="Converted" />}
                   </div>
-                )}
-              </>
+                  <div className="img-info converted-tag">{converted ? `${text.ready} • ${convInfo}` : ''}</div>
+                </div>
+              </div>
             )}
 
             {preview && (
@@ -487,7 +481,7 @@ function UploadSection({ selectedExam, language, user }) {
                 <div className="trust-badge">{text.trustBadge}</div>
                 <div className="preview-footer-actions">
                   <button type="button" className="btn-change-photo" onClick={reset}>{text.changePhoto}</button>
-                  <button type="button" className="btn-download" onClick={download}>{text.download}</button>
+                  <button type="button" className="btn-download" onClick={download} disabled={isProcessing}>{text.download}</button>
                 </div>
                 {saveStatus === 'saving' && <div className="img-info" style={{textAlign:'center',marginTop:8}}>{language==='hi'?'सर्वर पर सेव हो रहा है…':'Saving to server…'}</div>}
                 {saveStatus === 'saved'  && <div className="img-info converted-tag" style={{textAlign:'center',marginTop:8}}>{language==='hi'?'☁️ सेव हो गया':'☁️ Saved to server'}{user?.id ? (language==='hi'?' • आपकी History में जुड़ गया':' • Added to your History') : ''}</div>}

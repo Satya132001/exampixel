@@ -6,9 +6,17 @@ const t = {
   hi: { exams: 'परीक्षाएं', how: 'कैसे काम करे', faq: 'सवाल-जवाब', login: 'लॉगिन', history: 'मेरी फोटो', logout: 'लॉगआउट' }
 };
 
-function Navbar({ language, setLanguage, user, onLoginClick, onLogoutClick, onHistoryClick }) {
+function Navbar({ 
+  language, 
+  setLanguage, 
+  user, 
+  onLoginClick, 
+  onLogoutClick, 
+  onHistoryClick,
+  isMenuOpen,      // ← NEW: Receive from App
+  onMenuToggle     // ← NEW: Receive toggle handler
+}) {
   const [scrolled, setScrolled] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const text = t[language] || t.hi;
 
   useEffect(() => {
@@ -19,22 +27,16 @@ function Navbar({ language, setLanguage, user, onLoginClick, onLogoutClick, onHi
 
   const handleNavClick = (e, id) => {
     e.preventDefault();
-    setIsMenuOpen(false); // Close mobile menu
+    onMenuToggle(false); // Close mobile menu
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const firstName = (user?.full_name || user?.username || '').split(' ')[0];
 
-  // Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (isMenuOpen && !e.target.closest('.navbar')) {
-        setIsMenuOpen(false);
-      }
-    };
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, [isMenuOpen]);
+  // ── NEW: Toggle menu ──
+  const toggleMenu = () => {
+    onMenuToggle(!isMenuOpen);
+  };
 
   return (
     <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
@@ -46,7 +48,7 @@ function Navbar({ language, setLanguage, user, onLoginClick, onLogoutClick, onHi
         {/* Mobile Menu Toggle */}
         <button 
           className={`mobile-menu-toggle ${isMenuOpen ? 'active' : ''}`}
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          onClick={toggleMenu}
           aria-label="Toggle menu"
         >
           <span></span>
@@ -54,7 +56,7 @@ function Navbar({ language, setLanguage, user, onLoginClick, onLogoutClick, onHi
           <span></span>
         </button>
 
-        {/* Navigation Links - Mobile Responsive */}
+        {/* Navigation Links */}
         <ul className={`nav-links ${isMenuOpen ? 'open' : ''}`}>
           <li><a href="#exams" onClick={(e) => handleNavClick(e, 'exams')}>{text.exams}</a></li>
           <li><a href="#how" onClick={(e) => handleNavClick(e, 'how')}>{text.how}</a></li>

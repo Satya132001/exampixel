@@ -39,6 +39,7 @@ function AppInner() {
   const [user,         setUser]         = useState(null);
   const [showAuth,     setShowAuth]     = useState(false);
   const [showHistory,  setShowHistory]  = useState(false);
+  const [isMenuOpen,   setIsMenuOpen]   = useState(false); // ← NEW: Mobile menu state
 
   useScrollReveal();
 
@@ -48,6 +49,16 @@ function AppInner() {
       try { setUser(JSON.parse(saved)); } catch (_) { /* ignore corrupt value */ }
     }
   }, []);
+
+  // ── NEW: Prevent body scroll when mobile menu is open ──
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.classList.add('menu-open');
+    } else {
+      document.body.classList.remove('menu-open');
+    }
+    return () => document.body.classList.remove('menu-open');
+  }, [isMenuOpen]);
 
   const handleSelectExam = (exam) => {
     setSelectedExam(exam);
@@ -70,6 +81,11 @@ function AppInner() {
     showToast('Logged out', 'success', 2000);
   };
 
+  // ── NEW: Close mobile menu when clicking outside (passed to Navbar) ──
+  const handleMenuToggle = (isOpen) => {
+    setIsMenuOpen(isOpen);
+  };
+
   return (
     <div className="app">
       <ScrollToTop />
@@ -80,6 +96,8 @@ function AppInner() {
         onLoginClick={() => setShowAuth(true)}
         onLogoutClick={handleLogout}
         onHistoryClick={() => setShowHistory(true)}
+        isMenuOpen={isMenuOpen}           // ← NEW: Pass menu state
+        onMenuToggle={handleMenuToggle}   // ← NEW: Pass toggle handler
       />
 
       <div style={{ position: 'relative' }}>

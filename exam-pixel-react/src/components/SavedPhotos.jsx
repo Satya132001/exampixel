@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { API_BASE_URL } from '../config';
 
 const t = {
   en: {
@@ -21,13 +22,18 @@ export default function SavedPhotos({ isOpen, onClose, user, language }) {
     if (!isOpen || !user?.id) return;
     setLoading(true);
     setError('');
-    fetch(`/api/images/history/${user.id}`)
-      .then(res => res.json())
+    fetch(`${API_BASE_URL}/api/images/history/${user.id}`)
+      .then(res => {
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+        const ct = res.headers.get('content-type') || '';
+        if (!ct.includes('application/json')) throw new Error('Invalid server response');
+        return res.json();
+      })
       .then(data => {
         if (!data.success) throw new Error(data.message || 'Failed');
         setItems(data.images || []);
       })
-      .catch(() => setError(text.error))
+      .catch(err => setError(err.message || text.error))
       .finally(() => setLoading(false));
   }, [isOpen, user, text.error]);
 

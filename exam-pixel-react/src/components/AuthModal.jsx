@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE_URL } from '../config';
 
 const t = {
   en: {
@@ -37,16 +38,25 @@ export default function AuthModal({ isOpen, onClose, onSuccess, language }) {
     setError('');
     setLoading(true);
     try {
-      const endpoint = mode === 'login' ? '/api/users/login' : '/api/users/register';
+      const endpoint = `${API_BASE_URL}${mode === 'login' ? '/api/users/login' : '/api/users/register'}`;
       const body = mode === 'login'
         ? { email: form.email, password: form.password }
         : form;
 
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
+      let res;
+      try {
+        res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+      } catch {
+        throw new Error('Cannot reach server. Backend may be starting up — please try again in a few seconds.');
+      }
+      const ct = res.headers.get('content-type') || '';
+      if (!ct.includes('application/json')) {
+        throw new Error(`Server error (${res.status}). Backend may be starting — please retry in a moment.`);
+      }
       const data = await res.json();
       if (!res.ok || !data.success) {
         throw new Error(data.message || 'Something went wrong');

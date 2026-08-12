@@ -1,0 +1,6 @@
+backend/
+node_modules/
+.env*
+.git/
+README.md
+DEPLOYMENT.md

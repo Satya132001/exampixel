@@ -1,0 +1,15 @@
+# Docker ignore for build context
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+.env
+.venv
+venv/
+build/
+dist/
+*.egg-info
+.git
+node_modules/
+backend_fastapi/.env
